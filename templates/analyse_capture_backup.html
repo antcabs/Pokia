@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block title %}Analyse de capture - POKIA{% endblock %}
+
+{% block content %}
+<style>
+    .analyse-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .capture-preview {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .capture-preview img {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .analyse-form {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 12px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 16px;
+    }
+    .btn-analyse {
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .btn-analyse:hover {
+        opacity: 0.9;
+    }
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #6366f1;
+        text-decoration: none;
+    }
+</style>
+
+<div class="analyse-container">
+    <a href="{{ url_for('scanner_page') }}" class="back-link">← Retour au scanner</a>
+    
+    <h1>📸 Analyse de la capture</h1>
+    
+    <div class="capture-preview">
+        <img src="/{{ image_path }}" alt="Capture">
+    </div>
+    
+    <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" class="analyse-form">
+        <input type="hidden" name="captured_file" value="{{ image_path }}">
+        
+        <div class="form-group">
+            <label>Face de la carte :</label>
+            <select name="card_side">
+                <option value="front">Devant (Front)</option>
+                <option value="back">Dos (Back)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="use_ml" checked>
+                Utiliser l'analyse Machine Learning
+            </label>
+        </div>
+        
+        <button type="submit" class="btn-analyse">🔍 Lancer l'analyse POKIA</button>
+    </form>
+</div>
+{% endblock %}

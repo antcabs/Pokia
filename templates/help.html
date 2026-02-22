@@ -1,0 +1,119 @@
+{% extends "layout.html" %}
+
+{% block title %}Aide - Analyseur de Cartes Pokémon{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>Guide d'utilisation</h2>
+        </div>
+        <div class="card-body">
+            <div class="help-section">
+                <h3>Comment obtenir les meilleurs résultats</h3>
+                
+                <div class="help-item">
+                    <div class="help-icon">
+                        <div class="step-number">1</div>
+                    </div>
+                    <div class="help-content">
+                        <h4>Prendre une bonne photo</h4>
+                        <p>Pour une analyse précise, prenez une photo claire de votre carte avec:</p>
+                        <ul>
+                            <li>Un bon éclairage uniforme (évitez les ombres et reflets)</li>
+                            <li>Un fond contrasté avec la carte (noir, bleu foncé ou blanc)</li>
+                            <li>La carte bien à plat, non inclinée</li>
+                            <li>Toute la carte visible dans le cadre</li>
+                        </ul>
+                        <div class="example-images">
+                            <div class="example good">
+                                <img src="{{ url_for('static', filename='images/good-photo.jpg') }}" alt="Bonne photo">
+                                <span class="label">Bon exemple</span>
+                            </div>
+                            <div class="example bad">
+                                <img src="{{ url_for('static', filename='images/bad-photo.jpg') }}" alt="Mauvaise photo">
+                                <span class="label">Mauvais exemple</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <div class="help-icon">
+                        <div class="step-number">2</div>
+                    </div>
+                    <div class="help-content">
+                        <h4>Télécharger l'image</h4>
+                        <p>Cliquez sur le bouton Pokéball pour sélectionner votre image, puis sur "Analyser la carte" pour lancer l'analyse.</p>
+                        <p>Formats supportés: JPG, JPEG, PNG, BMP</p>
+                        <p>Taille maximale: 16 Mo</p>
+                    </div>
+                </div>
+                
+                <div class="help-item">
+                    <div class="help-icon">
+                        <div class="step-number">3</div>
+                    </div>
+                    <div class="help-content">
+                        <h4>Comprendre les résultats</h4>
+                        <p>L'analyse évalue plusieurs aspects de votre carte:</p>
+                        <ul>
+                            <li><strong>Coins (30 points)</strong>: État et netteté des quatre coins</li>
+                            <li><strong>Bords (30 points)</strong>: Rectitude et état des bords</li>
+                            <li><strong>Surface (20 points)</strong>: Rayures, taches et imperfections</li>
+                            <li><strong>Centrage (20 points)</strong>: Équilibre de l'illustration sur la carte</li>
+                        </ul>
+                        <p>La note globale sur 100 est convertie en équivalent POKIA de 1 à 10.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-section">
+                <h3>Questions fréquentes</h3>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        L'analyse ne détecte pas ma carte correctement. Que faire?
+                    </div>
+                    <div class="faq-answer">
+                        <p>Essayez de:</p>
+                        <ul>
+                            <li>Utiliser un fond avec plus de contraste</li>
+                            <li>Améliorer l'éclairage (éviter les ombres)</li>
+                            <li>Prendre la photo de plus près, avec la carte occupant la majorité du cadre</li>
+                            <li>S'assurer que les bords de la carte sont bien visibles</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        La note POKIA est-elle précise?
+                    </div>
+                    <div class="faq-answer">
+                        <p>Notre système fournit une estimation basée sur l'analyse d'image. Bien que nos algorithmes soient optimisés pour correspondre aux critères PSA, seule une évaluation professionnelle peut donner une note officielle. Utilisez nos résultats comme guide préliminaire.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Est-ce que l'analyse fonctionne pour toutes les cartes Pokémon?
+                    </div>
+                    <div class="faq-answer">
+                        <p>L'outil est optimisé pour les cartes Pokémon standard. Les cartes de taille non standard ou avec des designs très inhabituels peuvent ne pas être correctement analysées.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Mes données sont-elles conservées?
+                    </div>
+                    <div class="faq-answer">
+                        <p>Les images téléchargées et les résultats d'analyse sont stockés temporairement sur notre serveur pour permettre le téléchargement du rapport. Les données sont automatiquement supprimées après 24 heures.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

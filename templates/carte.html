@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Pokia Authentique</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Carte Pokia Authentique</h1>
+        </header>
+        
+        <main id="carte-container">
+            <!-- La carte sera affichée ici dynamiquement -->
+            <div class="loading-message">Chargement de votre carte...</div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Collection Pokia - Système d'authentification</p>
+        </footer>
+    </div>
+
+    <script src="js/cartes-db.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+<!-- Contenu de css/styles.css -->
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+#carte-container {
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.carte-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .carte-details {
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: flex-start;
+    }
+}
+
+.carte-image {
+    max-width: 300px;
+    height: auto;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.carte-info {
+    flex: 1;
+    padding: 20px;
+    max-width: 500px;
+}
+
+.carte-titre {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #ff5e62;
+}
+
+.carte-serie {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #666;
+    padding: 5px 10px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.carte-details-list {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.carte-details-list li {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.carte-details-list strong {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.authenticite {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #e8f5e9;
+    border-left: 5px solid #4caf50;
+    border-radius: 5px;
+}
+
+.carte-non-trouvee {
+    text-align: center;
+    padding: 50px 20px;
+    color: #d32f2f;
+}
+
+.loading-message {
+    text-align: center;
+    padding: 50px 20px;
+    color: #666;
+    font-size: 1.2rem;
+}
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    padding: 20px 0;
+    color: #666;
+}
+
+/* Animation de chargement */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.loading-message {
+    animation: pulse 1.5s infinite ease-in-out;
+}

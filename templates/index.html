@@ -1,0 +1,184 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>Bienvenue dans l'Analyseur de Cartes Pokémon Pokia</h2>
+        </div>
+        <div class="card-body">
+            <p>Cet outil vous permet d'analyser la qualité de vos cartes Pokémon et d'obtenir une estimation de leur note Pokia.</p>
+            
+            <!-- Sélection du type d'analyse -->
+            <div class="analysis-type-section">
+                <h3>Type d'analyse</h3>
+                <div class="analysis-type-buttons">
+                    <button class="analysis-type-btn active" data-type="single">Analyse simple</button>
+                    <button class="analysis-type-btn" data-type="complete">Analyse complète (Recto-verso)</button>
+                    <a href="{{ url_for('scanner_page') }}" class="analysis-type-btn camera-btn">
+                        <span>📷</span> Capture par caméra
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Section pour l'analyse simple -->
+            <div class="upload-section" id="single-analysis">
+                <h3>Téléchargez votre carte Pokémon</h3>
+                <p>Prenez une photo claire de votre carte sur un fond contrasté.</p>
+                
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                    <div class="file-input-container">
+                        <input type="file" name="file" id="file" class="file-input" accept=".jpg,.jpeg,.png,.bmp">
+                        <label for="file" class="pokeball-button">
+                            <span class="pokeball-icon"></span>
+                            <span class="button-text">Choisir une image</span>
+                        </label>
+                        <span id="file-name">Aucun fichier sélectionné</span>
+                    </div>
+                    
+                    <div class="options-container">
+                        <div class="card-side-option">
+                            <label>Face de la carte:</label>
+                            <div class="radio-group">
+                                <input type="radio" name="card_side" id="side_front" value="front" checked>
+                                <label for="side_front">Recto (face avant)</label>
+                                <input type="radio" name="card_side" id="side_back" value="back">
+                                <label for="side_back">Verso (face arrière)</label>
+                            </div>
+                        </div>
+                        
+                        {% if ml_available %}
+                        <div class="option">
+                            <input type="checkbox" name="use_ml" id="use_ml">
+                            <label for="use_ml">Utiliser l'analyse par apprentissage automatique (ML)</label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Analyser la carte</button>
+                </form>
+            </div>
+            
+            <!-- Section pour l'analyse complète -->
+            <div class="upload-section" id="complete-analysis" style="display: none;">
+                <h3>Téléchargez votre carte Pokémon (recto et verso)</h3>
+                <p>Pour une analyse complète, nous avons besoin d'une photo du recto et du verso de votre carte.</p>
+                
+                <form action="{{ url_for('analyse_complete') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                    <div class="multi-file-input">
+                        <div class="file-section">
+                            <label class="section-label">Recto (face avant)</label>
+                            <div class="file-input-container">
+                                <input type="file" name="file_front" id="file_front" class="file-input" accept=".jpg,.jpeg,.png,.bmp">
+                                <label for="file_front" class="pokeball-button">
+                                    <span class="pokeball-icon"></span>
+                                    <span class="button-text">Choisir l'image du recto</span>
+                                </label>
+                                <span id="file-front-name">Aucun fichier sélectionné</span>
+                            </div>
+                        </div>
+                        
+                        <div class="file-section">
+                            <label class="section-label">Verso (face arrière)</label>
+                            <div class="file-input-container">
+                                <input type="file" name="file_back" id="file_back" class="file-input" accept=".jpg,.jpeg,.png,.bmp">
+                                <label for="file_back" class="pokeball-button">
+                                    <span class="pokeball-icon"></span>
+                                    <span class="button-text">Choisir l'image du verso</span>
+                                </label>
+                                <span id="file-back-name">Aucun fichier sélectionné</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="options-container">
+                        {% if ml_available %}
+                        <div class="option">
+                            <input type="checkbox" name="use_ml" id="use_ml_complete">
+                            <label for="use_ml_complete">Utiliser l'analyse par apprentissage automatique (ML) pour le recto</label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Analyser la carte (recto-verso)</button>
+                </form>
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Icône carte">
+                    </div>
+                    <h4>Détection automatique</h4>
+                    <p>Détection et redressement automatiques de la carte</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Icône analyse">
+                    </div>
+                    <h4>Analyse de qualité</h4>
+                    <p>Évaluation des coins, bords, surface et centrage</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Icône notation">
+                    </div>
+                    <h4>Notation Pokia</h4>
+                    <p>Estimation de la note Pokia sur l'échelle de 1 à 10</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Icône analyse complète">
+                    </div>
+                    <h4>Analyse recto-verso</h4>
+                    <p>Évaluation complète des deux faces de la carte</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Gestion du changement de fichiers pour l'analyse simple
+    document.getElementById('file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+        document.getElementById('file-name').textContent = fileName;
+    });
+    
+    // Gestion du changement de fichiers pour l'analyse complète
+    document.getElementById('file_front').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+        document.getElementById('file-front-name').textContent = fileName;
+    });
+    
+    document.getElementById('file_back').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+        document.getElementById('file-back-name').textContent = fileName;
+    });
+    
+    // Gestion du changement de type d'analyse
+    const analysisTypeBtns = document.querySelectorAll('.analysis-type-btn');
+    const singleAnalysisSection = document.getElementById('single-analysis');
+    const completeAnalysisSection = document.getElementById('complete-analysis');
+    
+    analysisTypeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Supprimer la classe active de tous les boutons
+            analysisTypeBtns.forEach(b => b.classList.remove('active'));
+            // Ajouter la classe active au bouton cliqué
+            this.classList.add('active');
+            
+            // Afficher la section correspondante
+            if (this.dataset.type === 'single') {
+                singleAnalysisSection.style.display = 'block';
+                completeAnalysisSection.style.display = 'none';
+            } else {
+                singleAnalysisSection.style.display = 'none';
+                completeAnalysisSection.style.display = 'block';
+            }
+        });
+    });
+</script>
+{% endblock %}

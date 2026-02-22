@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+
+{% block title %}Mon Profil - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <div class="container">
+        <div class="profile-header">
+            <h1>Mon Profil</h1>
+            <p>Gérez vos informations personnelles et suivez vos activités sur POKIA.</p>
+        </div>
+        
+        <!-- Affichage des messages flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="profile-content">
+            <div class="profile-sidebar">
+                <div class="user-info">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h2>{{ current_user.username }}</h2>
+                    <p>{{ current_user.email }}</p>
+                    <p class="join-date">Membre depuis {{ current_user.date_registered.strftime('%d/%m/%Y') }}</p>
+                </div>
+                
+                <div class="profile-menu">
+                    <a href="#" class="active"><i class="fas fa-user"></i> Informations</a>
+                    <a href="#"><i class="fas fa-shopping-cart"></i> Mes commandes</a>
+                    <a href="#"><i class="fas fa-heart"></i> Favoris</a>
+                    <a href="#"><i class="fas fa-cog"></i> Paramètres</a>
+                    <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                </div>
+            </div>
+            
+            <div class="profile-details">
+                <div class="profile-section-title">
+                    <h3>Informations personnelles</h3>
+                    <a href="#" class="edit-btn"><i class="fas fa-edit"></i> Modifier</a>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-item">
+                        <span class="info-label">Nom d'utilisateur</span>
+                        <span class="info-value">{{ current_user.username }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ current_user.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date d'inscription</span>
+                        <span class="info-value">{{ current_user.date_registered.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                </div>
+                
+                <div class="profile-section-title">
+                    <h3>Activité récente</h3>
+                </div>
+                
+                <div class="activity-card">
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>Vous n'avez pas encore d'activité.</p>
+                    </div>
+                </div>
+                
+                <div class="profile-section-title">
+                    <h3>Vos cartes favorites</h3>
+                </div>
+                
+                <div class="favorites-card">
+                    <div class="empty-state">
+                        <i class="fas fa-heart"></i>
+                        <p>Vous n'avez pas encore de carte favorite.</p>
+                        <a href="{{ url_for('marketplace') }}" class="btn-primary">Explorer la marketplace</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

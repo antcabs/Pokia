@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+
+{% block title %}Résultats d'analyse - Analyseur de Cartes Pokémon{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>Résultats d'analyse {% if details.card_side == 'back' %}(verso){% else %}(recto){% endif %}</h2>
+        </div>
+        <div class="card-body">
+            <div class="grade-section">
+                <div class="grade-header">
+                    {% if details.note_psa >= 9 %}
+                        <div class="grade-circle grade-excellent">
+                    {% elif details.note_psa >= 7 %}
+                        <div class="grade-circle grade-good">
+                    {% elif details.note_psa >= 5 %}
+                        <div class="grade-circle grade-average">
+                    {% else %}
+                        <div class="grade-circle grade-poor">
+                    {% endif %}
+                        <span class="grade-number">{{ details.note_psa }}</span>
+                    </div>
+                    <div class="grade-info">
+                        <h3>Note POKIA: {{ details.note_psa }} ({{ details.description_psa }})</h3>
+                        <p>Note globale: <strong>{{ details.note_globale }}/80</strong></p>
+                        {% if details.card_side %}
+                        <p class="card-side-info">Face analysée: <strong>{% if details.card_side == 'back' %}Verso (arrière){% else %}Recto (avant){% endif %}</strong></p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grade-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Coins</div>
+                        <div class="detail-bar">
+                            <div class="detail-fill coins-fill"></div>
+                        </div>
+                        <div class="detail-value">{{ details.coins }}/30</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Bords</div>
+                        <div class="detail-bar">
+                            <div class="detail-fill bords-fill"></div>
+                        </div>
+                        <div class="detail-value">{{ details.bords }}/30</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Centrage</div>
+                        <div class="detail-bar">
+                            <div class="detail-fill centrage-fill"></div>
+                        </div>
+                        <div class="detail-value">{{ details.centrage }}/20</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section pour Black Label Metrics (affichée uniquement pour l'analyse du dos) -->
+            {% if details.blm_grade is defined %}
+            <div class="blm-section">
+                <h3>Black Label Metrics - Centrage</h3>
+                <div class="blm-details">
+                    <div class="blm-horizontal">
+                        <div class="blm-label">Horizontal:</div>
+                        <div class="blm-value">{{ details.blm_ratio_horizontal }}</div>
+                        <div class="blm-grade">Grade: {{ details.blm_grade_horizontal }}</div>
+                        <div class="blm-status {% if details.blm_acceptable_h %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                            {{ "ACCEPTABLE" if details.blm_acceptable_h else "HORS TOLÉRANCE" }}
+                        </div>
+                    </div>
+                    <div class="blm-vertical">
+                        <div class="blm-label">Vertical:</div>
+                        <div class="blm-value">{{ details.blm_ratio_vertical }}</div>
+                        <div class="blm-grade">Grade: {{ details.blm_grade_vertical }}</div>
+                        <div class="blm-status {% if details.blm_acceptable_v %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                            {{ "ACCEPTABLE" if details.blm_acceptable_v else "HORS TOLÉRANCE" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="blm-combined">
+                    <div class="blm-combined-grade">Grade combiné: <strong>{{ details.blm_grade }}</strong></div>
+                    <div class="blm-overall-status {% if details.blm_acceptable %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                        {% if details.blm_acceptable %}
+                            <strong>CONFORME AUX STANDARDS BLACK LABEL</strong>
+                            <span>Le centrage de cette carte respecte les normes Black Label (60/40 ou mieux).</span>
+                        {% else %}
+                            <strong>NON CONFORME AUX STANDARDS BLACK LABEL</strong>
+                            <span>Le centrage de cette carte ne respecte pas les normes Black Label qui requièrent un minimum de 60/40.</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if details.blm_marge_gauche is defined %}
+                <div class="blm-margins">
+                    <div class="blm-margin-title">Mesures précises (en pixels):</div>
+                    <div class="blm-margin-details">
+                        <span>Gauche: {{ details.blm_marge_gauche }}</span>
+                        <span>Droite: {{ details.blm_marge_droite }}</span>
+                        <span>Haut: {{ details.blm_marge_haut }}</span>
+                        <span>Bas: {{ details.blm_marge_bas }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="image-results">
+                <div class="image-result">
+                    <h4>Image originale</h4>
+                    <div class="image-container">
+                        <img src="data:image/jpeg;base64,{{ details.original_image }}" alt="Original">
+                    </div>
+                </div>
+                <div class="image-result">
+                    <h4>Carte détectée</h4>
+                    <div class="image-container">
+                        {% if details.carte_redressee %}
+                            <img src="data:image/jpeg;base64,{{ details.carte_redressee }}" alt="Carte détectée">
+                        {% else %}
+                            <p>Image non disponible en mode ML</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="image-result full-width">
+                    <h4>Rapport d'analyse</h4>
+                    <div class="image-container">
+                        <img src="data:image/jpeg;base64,{{ details.rapport }}" alt="Rapport d'analyse">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="{{ url_for('results', filename=details.result_filename) }}" download class="download-button">Télécharger le rapport</a>
+                <a href="{{ url_for('index') }}" class="back-button">Analyser une autre carte</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Appliquer les largeurs des barres de progression dynamiquement
+    document.addEventListener('DOMContentLoaded', function() {
+        const coinsFill = document.querySelector('.coins-fill');
+        const bordsFill = document.querySelector('.bords-fill');
+        const centrageFill = document.querySelector('.centrage-fill');
+        
+        coinsFill.style.width = '{{ (details.coins / 30) * 100 }}%';
+        bordsFill.style.width = '{{ (details.bords / 30) * 100 }}%';
+        centrageFill.style.width = '{{ (details.centrage / 20) * 100 }}%';
+    });
+</script>
+{% endblock %}

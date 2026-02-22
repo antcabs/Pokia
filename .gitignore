@@ -1,0 +1,7 @@
+*.pth
+results/
+static/images/
+*.jpg
+*.JPG
+*.png
+__pycache__/

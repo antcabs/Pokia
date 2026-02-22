@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+{% block title %}Mes Commandes - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/orders.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="orders-section">
+    <div class="container">
+        <div class="orders-header">
+            <h1>Mes Commandes</h1>
+            <p>Historique et suivi de vos commandes</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="orders-content">
+            {% if orders %}
+                <div class="orders-list">
+                    <div class="orders-header-row">
+                        <span class="column-order-id">N° Commande</span>
+                        <span class="column-date">Date</span>
+                        <span class="column-status">Statut</span>
+                        <span class="column-total">Total</span>
+                        <span class="column-actions">Actions</span>
+                    </div>
+                    
+                    {% for order in orders %}
+                    <div class="order-row">
+                        <div class="column-order-id">
+                            <span class="order-id">#{{ order.id }}</span>
+                        </div>
+                        
+                        <div class="column-date">
+                            <span class="order-date">{{ order.order_date.strftime('%d/%m/%Y') }}</span>
+                            <span class="order-time">{{ order.order_date.strftime('%H:%M') }}</span>
+                        </div>
+                        
+                        <div class="column-status">
+                            <span class="order-status status-{{ order.status }}">{{ order.status }}</span>
+                        </div>
+                        
+                        <div class="column-total">
+                            <span class="order-total">{{ "%.2f"|format(order.total_amount) }} €</span>
+                        </div>
+                        
+                        <div class="column-actions">
+                            <a href="{{ url_for('order_details', order_id=order.id) }}" class="btn-view-details">
+                                <i class="fas fa-eye"></i> Détails
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-orders">
+                    <div class="empty-orders-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <h2>Vous n'avez pas encore de commandes</h2>
+                    <p>Explorez notre marketplace et faites votre première commande!</p>
+                    <a href="{{ url_for('marketplace') }}" class="btn-primary">Explorer la marketplace</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

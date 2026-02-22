@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+
+{% block title %}Modifier une carte Pokémon{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/market.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="add-card-section">
+    <div class="container">
+        <div class="form-header">
+            <h2>Modifier une carte</h2>
+            <p>Mettez à jour les informations de la carte</p>
+        </div>
+        
+        <form action="{{ url_for('edit_card', card_id=card.id) }}" method="POST" enctype="multipart/form-data" class="card-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="card_name">Nom de la carte *</label>
+                    <input type="text" id="card_name" name="card_name" value="{{ card.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_type">Type *</label>
+                    <select id="card_type" name="card_type" required>
+                        <option value="">Sélectionner un type</option>
+                        <option value="Feu" {% if card.type == 'Feu' %}selected{% endif %}>Feu</option>
+                        <option value="Eau" {% if card.type == 'Eau' %}selected{% endif %}>Eau</option>
+                        <option value="Plante" {% if card.type == 'Plante' %}selected{% endif %}>Plante</option>
+                        <option value="Électrique" {% if card.type == 'Électrique' %}selected{% endif %}>Électrique</option>
+                        <option value="Psy" {% if card.type == 'Psy' %}selected{% endif %}>Psy</option>
+                        <option value="Combat" {% if card.type == 'Combat' %}selected{% endif %}>Combat</option>
+                        <option value="Ténèbres" {% if card.type == 'Ténèbres' %}selected{% endif %}>Ténèbres</option>
+                        <option value="Métal" {% if card.type == 'Métal' %}selected{% endif %}>Métal</option>
+                        <option value="Fée" {% if card.type == 'Fée' %}selected{% endif %}>Fée</option>
+                        <option value="Dragon" {% if card.type == 'Dragon' %}selected{% endif %}>Dragon</option>
+                        <option value="Incolore" {% if card.type == 'Incolore' %}selected{% endif %}>Incolore</option>
+                        <option value="Spectre" {% if card.type == 'Spectre' %}selected{% endif %}>Spectre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_rarity">Rareté *</label>
+                    <select id="card_rarity" name="card_rarity" required>
+                        <option value="">Sélectionner une rareté</option>
+                        <option value="Commune" {% if card.rarity == 'Commune' %}selected{% endif %}>Commune</option>
+                        <option value="Peu commune" {% if card.rarity == 'Peu commune' %}selected{% endif %}>Peu commune</option>
+                        <option value="Rare" {% if card.rarity == 'Rare' %}selected{% endif %}>Rare</option>
+                        <option value="Ultra Rare" {% if card.rarity == 'Ultra Rare' %}selected{% endif %}>Ultra Rare</option>
+                        <option value="Secrète" {% if card.rarity == 'Secrète' %}selected{% endif %}>Secrète</option>
+                        <option value="Hyper Rare" {% if card.rarity == 'Hyper Rare' %}selected{% endif %}>Hyper Rare</option>
+                        <option value="Rainbow" {% if card.rarity == 'Rainbow' %}selected{% endif %}>Rainbow</option>
+                        <option value="Shiny" {% if card.rarity == 'Shiny' %}selected{% endif %}>Shiny</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="psa_grade">Note POKIA (optionnel)</label>
+                    <select id="psa_grade" name="psa_grade">
+                        <option value="">Aucune</option>
+                        <option value="PSA 10" {% if card.psa_grade == 'PSA 10' %}selected{% endif %}>POKIA 10</option>
+                        <option value="PSA 9" {% if card.psa_grade == 'PSA 9' %}selected{% endif %}>POKIA 9</option>
+                        <option value="PSA 8" {% if card.psa_grade == 'PSA 8' %}selected{% endif %}>POKIA 8</option>
+                        <option value="PSA 7" {% if card.psa_grade == 'PSA 7' %}selected{% endif %}>POKIA 7</option>
+                        <option value="PSA 6" {% if card.psa_grade == 'PSA 6' %}selected{% endif %}>POKIA 6</option>
+                        <option value="PSA 5" {% if card.psa_grade == 'PSA 5' %}selected{% endif %}>POKIA 5</option>
+                        <option value="PSA 4" {% if card.psa_grade == 'PSA 4' %}selected{% endif %}>POKIA 4</option>
+                        <option value="PSA 3" {% if card.psa_grade == 'PSA 3' %}selected{% endif %}>POKIA 3</option>
+                        <option value="PSA 2" {% if card.psa_grade == 'PSA 2' %}selected{% endif %}>POKIA 2</option>
+                        <option value="PSA 1" {% if card.psa_grade == 'PSA 1' %}selected{% endif %}>POKIA 1</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_price">Prix (€) *</label>
+                    <input type="number" id="card_price" name="card_price" step="0.01" min="0" value="{{ card.price }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="old_price">Ancien prix (€) (optionnel)</label>
+                    <input type="number" id="old_price" name="old_price" step="0.01" min="0" value="{{ card.old_price or '' }}">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="card_description">Description</label>
+                    <textarea id="card_description" name="card_description" rows="4">{{ card.description or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Image actuelle</label>
+                    <div class="current-image">
+                        <img src="{{ url_for('static', filename=card.image_path) }}" alt="{{ card.name }}" style="max-width: 100px;">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_image">Nouvelle image (optionnel)</label>
+                    <div class="file-input-container">
+                        <input type="file" id="card_image" name="card_image" accept="image/*">
+                        <label for="card_image" class="file-input-label">
+                            <i class="fas fa-upload"></i> Choisir une image
+                        </label>
+                        <span class="file-name">Conserver l'image actuelle</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="secondary-btn" onclick="window.history.back()">Annuler</button>
+                <button type="submit" class="primary-btn">Mettre à jour</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Script pour afficher le nom du fichier sélectionné
+    document.getElementById('card_image').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Conserver l\'image actuelle';
+        document.querySelector('.file-name').textContent = fileName;
+    });
+</script>
+{% endblock %}

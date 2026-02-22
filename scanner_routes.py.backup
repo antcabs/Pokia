@@ -1,0 +1,486 @@
+"""
+scanner_routes.py - Routes Flask pour le scanner caméra POKIA avec détection ML en temps réel
+"""
+from flask import Response, render_template, jsonify, request
+import cv2
+import numpy as np
+import time
+import threading
+import os
+
+# Importer le scanner hardware
+from scanner_rpi import get_scanner, CAMERA_DISPONIBLE
+
+# Variables globales pour le streaming
+streaming_active = False
+last_frame = None
+frame_lock = threading.Lock()
+
+# Configuration de la détection
+DETECTION_CONFIG = {
+    'show_corners': True,      # Afficher les zones de coins
+    'show_edges': True,        # Afficher les zones de bords
+    'show_centering': True,    # Afficher les lignes de centrage
+    'corner_color': (0, 255, 0),      # Vert pour les coins
+    'edge_color': (255, 165, 0),      # Orange pour les bords
+    'centering_color': (255, 0, 255), # Magenta pour le centrage
+    'card_outline_color': (168, 85, 247),  # Violet pour le contour
+}
+
+
+def detect_card_contour(frame):
+    """
+    Détecte le contour de la carte Pokémon dans la frame.
+    Retourne le contour et les 4 coins ordonnés, ou None si non détecté.
+    Utilise plusieurs méthodes de détection pour une meilleure fiabilité.
+    """
+    h_frame, w_frame = frame.shape[:2]
+    
+    # Convertir en différents espaces de couleur
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # === MÉTHODE 1: Détection par Canny (bords) ===
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    canny = cv2.Canny(blurred, 30, 100)
+    
+    # Dilater pour connecter les bords
+    kernel = np.ones((3, 3), np.uint8)
+    canny_dilated = cv2.dilate(canny, kernel, iterations=2)
+    
+    # === MÉTHODE 2: Seuillage adaptatif ===
+    thresh_adapt = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                         cv2.THRESH_BINARY_INV, 11, 2)
+    
+    # === MÉTHODE 3: Détection par saturation (cartes colorées) ===
+    saturation = hsv[:, :, 1]
+    _, thresh_sat = cv2.threshold(saturation, 50, 255, cv2.THRESH_BINARY)
+    
+    # Combiner les méthodes
+    combined = cv2.bitwise_or(canny_dilated, thresh_adapt)
+    combined = cv2.bitwise_or(combined, thresh_sat)
+    
+    # Opérations morphologiques pour nettoyer
+    kernel_large = np.ones((7, 7), np.uint8)
+    combined = cv2.morphologyEx(combined, cv2.MORPH_CLOSE, kernel_large, iterations=3)
+    combined = cv2.morphologyEx(combined, cv2.MORPH_OPEN, kernel, iterations=1)
+    
+    # Trouver les contours
+    contours, _ = cv2.findContours(combined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if not contours:
+        return None, None
+    
+    # Filtrer les contours par aire et forme
+    ratio_cible = 6.3 / 8.8  # Ratio carte Pokémon (portrait)
+    ratio_cible_inv = 8.8 / 6.3  # Ratio inversé (paysage)
+    meilleur_contour = None
+    meilleur_score = float('inf')
+    
+    min_area = (w_frame * h_frame) * 0.05  # Au moins 5% de l'image
+    max_area = (w_frame * h_frame) * 0.95  # Maximum 95%
+    
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < min_area or area > max_area:
+            continue
+        
+        # Calculer le rectangle englobant avec rotation
+        rect = cv2.minAreaRect(contour)
+        largeur, hauteur = rect[1]
+        
+        if largeur == 0 or hauteur == 0:
+            continue
+        
+        # Assurer largeur < hauteur pour le calcul du ratio
+        if largeur > hauteur:
+            largeur, hauteur = hauteur, largeur
+        
+        ratio = largeur / hauteur
+        
+        # Calculer la différence avec le ratio cible
+        diff_ratio = min(abs(ratio - ratio_cible), abs(ratio - ratio_cible_inv))
+        
+        # Vérifier la rectangularité via convexité
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        if hull_area > 0:
+            solidity = area / hull_area
+        else:
+            solidity = 0
+        
+        # Score: bon ratio + forme rectangulaire (solidity proche de 1)
+        # Plus le score est bas, mieux c'est
+        score = diff_ratio * 2 + (1 - solidity) * 3
+        
+        # Bonus pour les contours qui sont bien centrés
+        M = cv2.moments(contour)
+        if M["m00"] > 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            dist_center = np.sqrt((cx - w_frame/2)**2 + (cy - h_frame/2)**2)
+            center_bonus = dist_center / max(w_frame, h_frame)
+            score += center_bonus * 0.5
+        
+        if score < meilleur_score and diff_ratio < 0.3:  # Tolérance de 30% sur le ratio
+            meilleur_score = score
+            meilleur_contour = contour
+    
+    if meilleur_contour is None:
+        return None, None
+    
+    # Affiner le contour avec une approximation polygonale
+    peri = cv2.arcLength(meilleur_contour, True)
+    approx = cv2.approxPolyDP(meilleur_contour, 0.02 * peri, True)
+    
+    # Obtenir les 4 coins via minAreaRect
+    rect = cv2.minAreaRect(meilleur_contour)
+    box = cv2.boxPoints(rect)
+    box = np.array(box, dtype=np.int32)
+    
+    # Ordonner les points
+    points = order_points(box)
+    
+    return meilleur_contour, points
+
+
+def order_points(pts):
+    """
+    Ordonne les points: [haut-gauche, haut-droite, bas-droite, bas-gauche]
+    """
+    pts = np.array(pts).reshape(4, 2)
+    rect = np.zeros((4, 2), dtype="float32")
+    
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
+    
+    return rect.astype(np.int32)
+
+
+def draw_ml_detection_overlay(frame, contour, points):
+    """
+    Dessine les zones d'analyse ML sur la frame:
+    - Rectangles pour les 4 coins
+    - Lignes pour les 4 bords
+    - Lignes de centrage
+    """
+    if points is None:
+        return frame
+    
+    h, w = frame.shape[:2]
+    overlay = frame.copy()
+    
+    # Convertir points en int
+    points = np.array(points, dtype=np.int32)
+    
+    # Calculer les dimensions de la carte détectée
+    card_width = int(np.linalg.norm(points[1] - points[0]))
+    card_height = int(np.linalg.norm(points[3] - points[0]))
+    
+    if card_width == 0 or card_height == 0:
+        return frame
+    
+    # ===== 1. DESSINER LE CONTOUR RÉEL DE LA CARTE =====
+    # Dessiner le contour exact détecté (suit vraiment les bords)
+    if contour is not None:
+        cv2.drawContours(overlay, [contour], -1, DETECTION_CONFIG['card_outline_color'], 2)
+    else:
+        # Si pas de contour, dessiner le rectangle des 4 points
+        cv2.polylines(overlay, [points], True, DETECTION_CONFIG['card_outline_color'], 2)
+    
+    # Coins stylisés - suivent les vrais points détectés
+    corner_len = min(20, card_width // 12, card_height // 12)
+    thickness = 3
+    
+    for i, pt in enumerate(points):
+        pt = tuple(pt)
+        pt_next = tuple(points[(i + 1) % 4])
+        pt_prev = tuple(points[(i - 1) % 4])
+        
+        # Direction vers le point suivant
+        dx1 = pt_next[0] - pt[0]
+        dy1 = pt_next[1] - pt[1]
+        len1 = np.sqrt(dx1**2 + dy1**2)
+        if len1 > 0:
+            dx1, dy1 = dx1/len1, dy1/len1
+        
+        # Direction vers le point précédent
+        dx2 = pt_prev[0] - pt[0]
+        dy2 = pt_prev[1] - pt[1]
+        len2 = np.sqrt(dx2**2 + dy2**2)
+        if len2 > 0:
+            dx2, dy2 = dx2/len2, dy2/len2
+        
+        # Dessiner les marques de coin
+        end1 = (int(pt[0] + dx1 * corner_len), int(pt[1] + dy1 * corner_len))
+        end2 = (int(pt[0] + dx2 * corner_len), int(pt[1] + dy2 * corner_len))
+        
+        cv2.line(overlay, pt, end1, DETECTION_CONFIG['card_outline_color'], thickness)
+        cv2.line(overlay, pt, end2, DETECTION_CONFIG['card_outline_color'], thickness)
+    
+    # ===== 2. ZONES D'ANALYSE DES COINS (rectangles verts) =====
+    if DETECTION_CONFIG['show_corners']:
+        taille_roi = max(12, int(min(card_width, card_height) * 0.07))
+        
+        # Centre de la carte
+        center_x = int(np.mean([p[0] for p in points]))
+        center_y = int(np.mean([p[1] for p in points]))
+        
+        for i, pt in enumerate(points):
+            cx, cy = int(pt[0]), int(pt[1])
+            
+            # Direction vers le centre
+            to_center_x = center_x - cx
+            to_center_y = center_y - cy
+            dist_to_center = np.sqrt(to_center_x**2 + to_center_y**2)
+            
+            if dist_to_center > 0:
+                # Décaler le rectangle vers l'intérieur de la carte
+                offset = taille_roi // 2
+                cx_offset = int(cx + (to_center_x / dist_to_center) * offset)
+                cy_offset = int(cy + (to_center_y / dist_to_center) * offset)
+            else:
+                cx_offset, cy_offset = cx, cy
+            
+            x1 = cx_offset - taille_roi // 2
+            y1 = cy_offset - taille_roi // 2
+            x2 = cx_offset + taille_roi // 2
+            y2 = cy_offset + taille_roi // 2
+            
+            # S'assurer que les coordonnées sont dans l'image
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w, x2), min(h, y2)
+            
+            # Dessiner le rectangle de coin
+            cv2.rectangle(overlay, (x1, y1), (x2, y2), DETECTION_CONFIG['corner_color'], 2)
+            cv2.putText(overlay, f"C{i+1}", (x1 + 2, y1 + 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, DETECTION_CONFIG['corner_color'], 1)
+    
+    # ===== 3. ZONES D'ANALYSE DES BORDS (lignes orange) =====
+    if DETECTION_CONFIG['show_edges']:
+        epaisseur = max(6, int(min(card_width, card_height) * 0.02))
+        
+        # Définir les 4 bords
+        edges = [
+            (points[0], points[1]),  # Haut
+            (points[1], points[2]),  # Droite
+            (points[2], points[3]),  # Bas
+            (points[3], points[0])   # Gauche
+        ]
+        
+        for (p1, p2) in edges:
+            p1 = np.array(p1)
+            p2 = np.array(p2)
+            
+            # Dessiner la ligne du bord
+            cv2.line(overlay, tuple(p1), tuple(p2), DETECTION_CONFIG['edge_color'], 2)
+            
+            # Lignes perpendiculaires pour montrer la zone d'analyse
+            edge_vec = p2 - p1
+            edge_len = np.linalg.norm(edge_vec)
+            if edge_len > 0:
+                edge_unit = edge_vec / edge_len
+                perp = np.array([-edge_unit[1], edge_unit[0]])
+                
+                for t in [0.2, 0.4, 0.6, 0.8]:
+                    pt_on_edge = p1 + edge_vec * t
+                    pt_inner = pt_on_edge + perp * epaisseur
+                    pt_outer = pt_on_edge - perp * epaisseur
+                    cv2.line(overlay, tuple(pt_inner.astype(int)), tuple(pt_outer.astype(int)), 
+                            DETECTION_CONFIG['edge_color'], 1)
+    
+    # ===== 4. LIGNES DE CENTRAGE (magenta) =====
+    if DETECTION_CONFIG['show_centering']:
+        center_x = int(np.mean([p[0] for p in points]))
+        center_y = int(np.mean([p[1] for p in points]))
+        
+        # Points milieu des bords
+        top_mid = ((points[0][0] + points[1][0]) // 2, (points[0][1] + points[1][1]) // 2)
+        bottom_mid = ((points[2][0] + points[3][0]) // 2, (points[2][1] + points[3][1]) // 2)
+        left_mid = ((points[0][0] + points[3][0]) // 2, (points[0][1] + points[3][1]) // 2)
+        right_mid = ((points[1][0] + points[2][0]) // 2, (points[1][1] + points[2][1]) // 2)
+        
+        # Lignes de centrage
+        cv2.line(overlay, top_mid, bottom_mid, DETECTION_CONFIG['centering_color'], 1, cv2.LINE_AA)
+        cv2.line(overlay, left_mid, right_mid, DETECTION_CONFIG['centering_color'], 1, cv2.LINE_AA)
+        
+        # Marquer le centre
+        cv2.circle(overlay, (center_x, center_y), 4, DETECTION_CONFIG['centering_color'], -1)
+    
+    # ===== 5. TEXTE D'INFORMATION =====
+    cv2.putText(overlay, "Carte detectee!", (10, 25), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv2.putText(overlay, f"Taille: {card_width}x{card_height}px", (10, 45), 
+               cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+    
+    return overlay
+
+
+def draw_guide_rectangle(frame):
+    """
+    Dessine un rectangle de guidage quand aucune carte n'est détectée.
+    """
+    h, w = frame.shape[:2]
+    
+    # Calculer la taille du rectangle guide (proportions carte Pokémon)
+    card_h = int(h * 0.85)
+    card_w = int(card_h * (6.3 / 8.8))
+    
+    x1 = (w - card_w) // 2
+    y1 = (h - card_h) // 2
+    x2 = x1 + card_w
+    y2 = y1 + card_h
+    
+    # Rectangle en pointillés
+    color = (168, 85, 247)  # Violet
+    
+    # Dessiner le rectangle
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+    
+    # Coins stylisés
+    corner_len = 25
+    for cx, cy, dx, dy in [(x1, y1, 1, 1), (x2, y1, -1, 1),
+                           (x1, y2, 1, -1), (x2, y2, -1, -1)]:
+        cv2.line(frame, (cx, cy), (cx + corner_len * dx, cy), color, 3)
+        cv2.line(frame, (cx, cy), (cx, cy + corner_len * dy), color, 3)
+    
+    # Texte
+    cv2.putText(frame, "Alignez la carte", (x1, y1 - 10),
+               cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+    cv2.putText(frame, "En attente de detection...", (10, 30),
+               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
+    
+    return frame
+
+
+def generate_frames_with_detection():
+    """
+    Générateur de frames avec détection ML en temps réel.
+    """
+    global streaming_active, last_frame
+    
+    scanner = get_scanner()
+    streaming_active = True
+    
+    while streaming_active:
+        if scanner.camera:
+            try:
+                # Capturer la frame
+                image = scanner.camera.capture_array()
+                
+                # Redimensionner pour le preview
+                h, w = image.shape[:2]
+                scale = 640 / max(h, w)
+                preview = cv2.resize(image, (int(w * scale), int(h * scale)))
+                preview_bgr = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
+                
+                # Détecter la carte
+                contour, points = detect_card_contour(preview_bgr)
+                
+                if contour is not None and points is not None:
+                    # Carte détectée - dessiner l'overlay ML
+                    preview_bgr = draw_ml_detection_overlay(preview_bgr, contour, points)
+                else:
+                    # Pas de carte - dessiner le guide
+                    preview_bgr = draw_guide_rectangle(preview_bgr)
+                
+                # Encoder en JPEG
+                _, buffer = cv2.imencode('.jpg', preview_bgr, [cv2.IMWRITE_JPEG_QUALITY, 75])
+                frame_bytes = buffer.tobytes()
+                
+                with frame_lock:
+                    last_frame = frame_bytes
+                
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                
+            except Exception as e:
+                print(f"[POKIA] Erreur streaming: {e}")
+                time.sleep(0.1)
+        else:
+            # Pas de caméra - image placeholder
+            placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(placeholder, "Camera non disponible", (150, 240),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            _, buffer = cv2.imencode('.jpg', placeholder)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            time.sleep(1)
+        
+        time.sleep(0.03)  # ~30 FPS
+
+
+def register_scanner_routes(app):
+    """
+    Enregistre les routes du scanner caméra dans l'application Flask.
+    """
+    
+    @app.route('/scanner')
+    def scanner_page():
+        """Page principale du scanner avec flux vidéo."""
+        return render_template('scanner.html')
+    
+    @app.route('/video_feed')
+    def video_feed():
+        """Flux vidéo MJPEG avec détection ML."""
+        return Response(generate_frames_with_detection(),
+                       mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    @app.route('/capture', methods=['POST'])
+    def capture_image():
+        """Capture une image pour l'analyse."""
+        scanner = get_scanner()
+        
+        try:
+            # Capturer l'image
+            chemin = scanner.capturer_image()
+            
+            if chemin and os.path.exists(chemin):
+                return jsonify({
+                    'success': True,
+                    'path': chemin,
+                    'message': 'Image capturée avec succès'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Échec de la capture'
+                }), 500
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': str(e)
+            }), 500
+    
+    @app.route('/scanner/status')
+    def scanner_status():
+        """Retourne le statut du scanner."""
+        scanner = get_scanner()
+        return jsonify({
+            'camera_available': scanner.camera is not None,
+            'led_available': scanner.led_rgb is not None,
+            'initialized': scanner.is_initialized,
+            'capturing': scanner.is_capturing
+        })
+    
+    @app.route('/scanner/config', methods=['POST'])
+    def update_scanner_config():
+        """Met à jour la configuration de détection."""
+        data = request.get_json()
+        
+        if 'show_corners' in data:
+            DETECTION_CONFIG['show_corners'] = data['show_corners']
+        if 'show_edges' in data:
+            DETECTION_CONFIG['show_edges'] = data['show_edges']
+        if 'show_centering' in data:
+            DETECTION_CONFIG['show_centering'] = data['show_centering']
+        
+        return jsonify({'success': True, 'config': DETECTION_CONFIG})
+    
+    print("[POKIA] Routes scanner enregistrées")

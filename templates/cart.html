@@ -1,0 +1,154 @@
+```html
+{% extends "layout.html" %}
+
+{% block title %}Mon Panier - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="cart-section">
+    <div class="container">
+        <div class="cart-header">
+            <h1>Mon Panier</h1>
+            <p>Récapitulatif des articles que vous souhaitez acheter</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="cart-content">
+            {% if cart_items %}
+                {% set total = 0 %}
+                {% for item in cart_items %}
+                    {% if item.grading_service %}
+                        {% set item_price = item.card.price + 15.0 %}
+                    {% else %}
+                        {% set item_price = item.card.price %}
+                    {% endif %}
+                    {% set total = total + (item_price * item.quantity) %}
+                {% endfor %}
+
+                <div class="cart-items">
+                    <div class="cart-item-header">
+                        <span class="column-product">Produit</span>
+                        <span class="column-price">Prix</span>
+                        <span class="column-quantity">Quantité</span>
+                        <span class="column-total">Total</span>
+                        <span class="column-action"></span>
+                    </div>
+                    
+                    {% for item in cart_items %}
+                    <div class="cart-item">
+                        <div class="column-product">
+                            <div class="product-info">
+                                <div class="product-image">
+                                    <a href="{{ url_for('card_details', card_id=item.card.id) }}">
+                                        <img src="{{ url_for('static', filename=item.card.image_path) }}" alt="{{ item.card.name }}">
+                                    </a>
+                                </div>
+                                <div class="product-details">
+                                    <h3><a href="{{ url_for('card_details', card_id=item.card.id) }}">{{ item.card.name }}</a></h3>
+                                    <div class="product-meta">
+                                        <span class="product-type">{{ item.card.type }}</span>
+                                        <span class="product-rarity">{{ item.card.rarity }}</span>
+                                        {% if item.card.psa_grade %}
+                                        <span class="product-grade">{{ item.card.psa_grade }}</span>
+                                        {% endif %}
+                                        {% if item.grading_service %}
+                                        <span class="product-service">Option gradation (+15€)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="column-price">
+                            <span class="price">
+                                {% if item.grading_service %}
+                                {{ "%.2f"|format(item.card.price + 15.0) }} €
+                                {% else %}
+                                {{ "%.2f"|format(item.card.price) }} €
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="column-quantity">
+                            <div class="quantity-control">
+                                <form action="{{ url_for('update_cart', item_id=item.id) }}" method="POST" class="quantity-form">
+                                    <input type="hidden" name="action" value="decrease">
+                                    <button type="submit" class="quantity-btn decrease"><i class="fas fa-minus"></i></button>
+                                </form>
+                                <span class="quantity">{{ item.quantity }}</span>
+                                <form action="{{ url_for('update_cart', item_id=item.id) }}" method="POST" class="quantity-form">
+                                    <input type="hidden" name="action" value="increase">
+                                    <button type="submit" class="quantity-btn increase"><i class="fas fa-plus"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="column-total">
+                            <span class="total-price">
+                                {% if item.grading_service %}
+                                {{ "%.2f"|format((item.card.price + 15.0) * item.quantity) }} €
+                                {% else %}
+                                {{ "%.2f"|format(item.card.price * item.quantity) }} €
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="column-action">
+                            <form action="{{ url_for('update_cart', item_id=item.id) }}" method="POST" class="remove-form">
+                                <input type="hidden" name="action" value="remove">
+                                <button type="submit" class="remove-btn"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="cart-summary">
+                    <h2>Récapitulatif</h2>
+                    <div class="summary-row">
+                        <span>Sous-total</span>
+                        <span>{{ "%.2f"|format(total) }} €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Frais de livraison</span>
+                        <span>Gratuit</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span>{{ "%.2f"|format(total) }} €</span>
+                    </div>
+                    <div class="checkout-btn-container">
+                        <a href="{{ url_for('checkout') }}" class="checkout-btn">Passer commande</a>
+                    </div>
+                    <div class="continue-shopping">
+                        <a href="{{ url_for('marketplace') }}"><i class="fas fa-arrow-left"></i> Continuer mes achats</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-cart">
+                    <div class="empty-cart-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h2>Votre panier est vide</h2>
+                    <p>Vous n'avez pas encore ajouté d'articles à votre panier.</p>
+                    <a href="{{ url_for('marketplace') }}" class="btn-primary">Explorer la marketplace</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+```

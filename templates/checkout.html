@@ -1,0 +1,438 @@
+{% extends "layout.html" %}
+
+{% block title %}Paiement - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<!-- Ajout du SDK PayPal -->
+<script src="https://www.paypal.com/sdk/js?client-id=AWZSabZnqAMbySmMBe6-bqXfavuA2bKEaX4QX0uGb8lxEIIGtYNnHLS1adghf9GVE-jpyUtsa9k9Wre3&currency=EUR"></script>
+<!-- Ajout du widget Mondial Relay -->
+<script src="https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="checkout-section">
+    <div class="container">
+        <div class="checkout-header">
+            <h1>Paiement</h1>
+            <p>Finalisez votre commande en remplissant les informations ci-dessous</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="checkout-content">
+            <div class="checkout-form-container">
+                <!-- Onglets de méthode de paiement -->
+                <div class="payment-method-tabs">
+                    <div class="tab-header">
+                        <div class="tab-item active" data-tab="card-payment">
+                            <i class="fas fa-credit-card"></i> Carte bancaire
+                        </div>
+                        <div class="tab-item" data-tab="paypal-payment">
+                            <i class="fab fa-paypal"></i> PayPal
+                        </div>
+                    </div>
+                </div>
+                
+                <form action="{{ url_for('checkout') }}" method="POST" class="checkout-form" id="payment-form">
+                    <input type="hidden" name="payment_method" id="payment_method" value="card">
+                    <!-- Champ caché pour stocker l'ID du point relais sélectionné -->
+                    <input type="hidden" name="relay_id" id="relay_id" value="">
+                    <input type="hidden" name="relay_name" id="relay_name" value="">
+                    <input type="hidden" name="relay_address" id="relay_address" value="">
+                    <input type="hidden" name="relay_postal_code" id="relay_postal_code" value="">
+                    <input type="hidden" name="relay_city" id="relay_city" value="">
+                    <input type="hidden" name="relay_country" id="relay_country" value="">
+                    
+                    <div class="form-section">
+                        <h2><i class="fas fa-map-marker-alt"></i> Adresse de livraison</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping_name">Nom complet</label>
+                                <input type="text" id="shipping_name" name="shipping_name" required placeholder="Votre nom et prénom">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping_address">Adresse</label>
+                                <input type="text" id="shipping_address" name="shipping_address" required placeholder="Numéro et nom de rue">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row two-columns">
+                            <div class="form-group">
+                                <label for="shipping_city">Ville</label>
+                                <input type="text" id="shipping_city" name="shipping_city" required placeholder="Votre ville">
+                            </div>
+                            <div class="form-group">
+                                <label for="shipping_postal_code">Code postal</label>
+                                <input type="text" id="shipping_postal_code" name="shipping_postal_code" required placeholder="Code postal">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping_country">Pays</label>
+                                <select id="shipping_country" name="shipping_country" required>
+                                    <option value="">Sélectionnez votre pays</option>
+                                    <option value="France">France</option>
+                                    <option value="Belgique">Belgique</option>
+                                    <option value="Suisse">Suisse</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="Luxembourg">Luxembourg</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping_email">Email</label>
+                                <input type="email" id="shipping_email" name="shipping_email" required placeholder="Votre email">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping_phone">Téléphone</label>
+                                <input type="tel" id="shipping_phone" name="shipping_phone" required placeholder="Votre numéro de téléphone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Mode de livraison -->
+                    <div class="form-section">
+                        <h2><i class="fas fa-truck"></i> Mode de livraison</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <div class="shipping-options">
+                                    <div class="shipping-option">
+                                        <input type="radio" id="shipping_home" name="shipping_method" value="home" checked>
+                                        <label for="shipping_home">Livraison à domicile</label>
+                                    </div>
+                                    <div class="shipping-option">
+                                        <input type="radio" id="shipping_relay" name="shipping_method" value="relay">
+                                        <label for="shipping_relay">Point Relais Mondial Relay</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="relay-point-section" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <button type="button" id="select-relay-point" class="btn-select-relay">
+                                        <i class="fas fa-map-marker-alt"></i> Sélectionner un Point Relais
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="selected-relay-info" style="display: none;" class="selected-relay-container">
+                                <h3>Point Relais sélectionné</h3>
+                                <div class="relay-details">
+                                    <div id="relay-name" class="relay-name"></div>
+                                    <div id="relay-address" class="relay-address"></div>
+                                    <div id="relay-city" class="relay-city"></div>
+                                </div>
+                                <button type="button" id="change-relay" class="btn-change-relay">Changer</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section carte de crédit -->
+                    <div class="form-section" id="card-payment">
+                        <h2><i class="fas fa-credit-card"></i> Informations de paiement</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="card_holder">Titulaire de la carte</label>
+                                <input type="text" id="card_holder" name="card_holder" placeholder="Nom sur la carte">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="card_number">Numéro de carte</label>
+                                <div class="card-input">
+                                    <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
+                                    <div class="card-icons">
+                                        <i class="fab fa-cc-visa"></i>
+                                        <i class="fab fa-cc-mastercard"></i>
+                                        <i class="fab fa-cc-amex"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row two-columns">
+                            <div class="form-group">
+                                <label for="expiry_date">Date d'expiration</label>
+                                <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/AA" maxlength="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="cvv">CVV</label>
+                                <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section PayPal -->
+                    <div class="form-section" id="paypal-payment" style="display: none;">
+                        <h2><i class="fab fa-paypal"></i> Paiement avec PayPal</h2>
+                        <div class="paypal-button-container">
+                            <p>Cliquez sur le bouton PayPal pour continuer votre paiement de manière sécurisée avec PayPal.</p>
+                            <div id="paypal-button-container"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="{{ url_for('view_cart') }}" class="btn-back"><i class="fas fa-arrow-left"></i> Retour au panier</a>
+                        <button type="submit" class="btn-place-order" id="card-submit-button">Passer la commande</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="order-summary">
+                <h2>Récapitulatif de commande</h2>
+                
+                <div class="order-items">
+                    {% for item in cart_items %}
+                    <div class="order-item">
+                        <div class="item-image">
+                            <img src="{{ url_for('static', filename=item.card.image_path) }}" alt="{{ item.card.name }}">
+                        </div>
+                        <div class="item-details">
+                            <h3>{{ item.card.name }}</h3>
+                            <div class="item-meta">
+                                <span class="item-type">{{ item.card.type }}</span>
+                                {% if item.card.psa_grade %}
+                                <span class="item-grade">{{ item.card.psa_grade }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="item-price-qty">
+                                <span class="item-price">{{ "%.2f"|format(item.card.price) }} €</span>
+                                <span class="item-qty">x {{ item.quantity }}</span>
+                            </div>
+                        </div>
+                        <div class="item-total">
+                            {{ "%.2f"|format(item.card.price * item.quantity) }} €
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="summary-totals">
+                    <div class="summary-row">
+                        <span>Sous-total</span>
+                        <span>{{ "%.2f"|format(total) }} €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Frais de livraison</span>
+                        <span>Gratuit</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span>{{ "%.2f"|format(total) }} €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Formatage du numéro de carte
+    document.getElementById('card_number').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        let formattedValue = '';
+        
+        for (let i = 0; i < value.length; i++) {
+            if (i > 0 && i % 4 === 0) {
+                formattedValue += ' ';
+            }
+            formattedValue += value[i];
+        }
+        
+        e.target.value = formattedValue;
+    });
+    
+    // Formatage de la date d'expiration
+    document.getElementById('expiry_date').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        let formattedValue = '';
+        
+        if (value.length > 0) {
+            formattedValue = value.substring(0, 2);
+            if (value.length > 2) {
+                formattedValue += '/' + value.substring(2, 4);
+            }
+        }
+        
+        e.target.value = formattedValue;
+    });
+    
+    // Gestion des onglets de paiement
+    document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Enlever la classe active de tous les onglets
+            document.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Ajouter la classe active à l'onglet cliqué
+            this.classList.add('active');
+            
+            // Cacher toutes les sections de paiement
+            document.getElementById('card-payment').style.display = 'none';
+            document.getElementById('paypal-payment').style.display = 'none';
+            
+            // Afficher la section correspondante
+            const tabId = this.getAttribute('data-tab');
+            document.getElementById(tabId).style.display = 'block';
+            
+            // Mettre à jour la méthode de paiement
+            document.getElementById('payment_method').value = tabId === 'card-payment' ? 'card' : 'paypal';
+            
+            // Afficher/Cacher le bouton de soumission du formulaire pour carte
+            document.getElementById('card-submit-button').style.display = 
+                tabId === 'card-payment' ? 'block' : 'none';
+        });
+    });
+
+    // Gestion du mode de livraison
+    document.querySelectorAll('input[name="shipping_method"]').forEach(option => {
+        option.addEventListener('change', function() {
+            if (this.value === 'relay') {
+                document.getElementById('relay-point-section').style.display = 'block';
+            } else {
+                document.getElementById('relay-point-section').style.display = 'none';
+                document.getElementById('selected-relay-info').style.display = 'none';
+                // Réinitialiser les champs cachés
+                document.getElementById('relay_id').value = '';
+                document.getElementById('relay_name').value = '';
+                document.getElementById('relay_address').value = '';
+                document.getElementById('relay_postal_code').value = '';
+                document.getElementById('relay_city').value = '';
+                document.getElementById('relay_country').value = '';
+            }
+        });
+    });
+
+    // Configuration du widget Mondial Relay
+    document.getElementById('select-relay-point').addEventListener('click', function() {
+        // Récupérer les infos d'adresse pour pré-remplir le widget
+        const postalCode = document.getElementById('shipping_postal_code').value;
+        const city = document.getElementById('shipping_city').value;
+        const country = document.getElementById('shipping_country').value;
+        
+        // Code pays ISO pour Mondial Relay
+        let countryCode = 'FR'; // Par défaut: France
+        switch(country) {
+            case 'Belgique': countryCode = 'BE'; break;
+            case 'Luxembourg': countryCode = 'LU'; break;
+            case 'Espagne': countryCode = 'ES'; break;
+            case 'Allemagne': countryCode = 'DE'; break;
+        }
+        
+        // Lancement du widget Mondial Relay
+        $("#select-relay-point").MR_ParcelShopPicker({
+            Target: "#ParcelShopPickerTarget", // Div cible pour afficher le widget
+            Brand: "BDTEST13",  // Code enseigne fourni par Mondial Relay
+            Country: countryCode,
+            PostCode: postalCode,
+            ColLivMod: "24R",   // Mode de livraison: 24R = en point relais
+            NbResults: 7,       // Nombre de résultats affichés
+            DisplayMapInfo: true,
+            OnParcelShopSelected: function(data) {
+                // Mettre à jour les champs cachés avec les informations du point relais
+                document.getElementById('relay_id').value = data.ID;
+                document.getElementById('relay_name').value = data.Nom;
+                document.getElementById('relay_address').value = data.Adresse1 + (data.Adresse2 ? ', ' + data.Adresse2 : '');
+                document.getElementById('relay_postal_code').value = data.CP;
+                document.getElementById('relay_city').value = data.Ville;
+                document.getElementById('relay_country').value = data.Pays;
+                
+                // Afficher les informations du point relais sélectionné
+                document.getElementById('relay-name').textContent = data.Nom;
+                document.getElementById('relay-address').textContent = data.Adresse1 + (data.Adresse2 ? ', ' + data.Adresse2 : '');
+                document.getElementById('relay-city').textContent = data.CP + ' ' + data.Ville;
+                
+                document.getElementById('selected-relay-info').style.display = 'block';
+            }
+        });
+    });
+    
+    // Bouton pour changer de point relais
+    document.getElementById('change-relay').addEventListener('click', function() {
+        document.getElementById('select-relay-point').click();
+    });
+    
+    // Validation du formulaire avant soumission
+    document.getElementById('payment-form').addEventListener('submit', function(e) {
+        // Vérifier si le mode de livraison sélectionné est Point Relais
+        if (document.querySelector('input[name="shipping_method"]:checked').value === 'relay') {
+            // Vérifier qu'un point relais est sélectionné
+            if (!document.getElementById('relay_id').value) {
+                e.preventDefault();
+                alert('Veuillez sélectionner un point relais avant de continuer.');
+                return false;
+            }
+        }
+        
+        // Autres validations si nécessaire
+        // ...
+    });
+    
+    // Configuration du bouton PayPal
+    paypal.Buttons({
+        // Configurer la transaction
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '{{ total }}'
+                    }
+                }]
+            });
+        },
+        
+        // Finaliser la transaction
+        onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+                // Récupérer les données d'adresse du formulaire
+                const formData = new FormData(document.getElementById('payment-form'));
+                formData.append('paypal_order_id', data.orderID);
+                formData.append('payment_method', 'paypal');
+                
+                // Envoyer les données au serveur
+                fetch('{{ url_for("process_paypal_payment") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        alert('Une erreur est survenue lors du traitement de votre paiement PayPal.');
+                    }
+                });
+            });
+        }
+    }).render('#paypal-button-container');
+</script>
+
+<!-- Div cible pour le widget Mondial Relay -->
+<div id="ParcelShopPickerTarget" style="display: none;"></div>
+{% endblock %}

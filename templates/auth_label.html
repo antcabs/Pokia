@@ -1,0 +1,298 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="label-container">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>Étiquette d'Authenticité Pokia</h2>
+        </div>
+        <div class="card-body">
+            <p class="instructions">Cette page vous permet de générer une étiquette d'authenticité pour la carte "{{ card.name }}". Imprimez cette étiquette et placez-la au dos de la protection de votre carte.</p>
+            
+            <div class="label-options">
+                <h3>Options d'étiquette</h3>
+                <form id="labelForm">
+                    <div class="form-group">
+                        <label for="labelSize">Taille de l'étiquette:</label>
+                        <select id="labelSize" name="labelSize" class="form-control">
+                            <option value="small">Petite (5 cm x 3 cm)</option>
+                            <option value="medium" selected>Moyenne (8 cm x 5 cm)</option>
+                            <option value="large">Grande (10 cm x 7 cm)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="includeInfo">Informations à inclure:</label>
+                        <div class="checkbox">
+                            <input type="checkbox" id="includeName" name="includeName" checked>
+                            <label for="includeName">Nom de la carte</label>
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" id="includeRarity" name="includeRarity" checked>
+                            <label for="includeRarity">Rareté</label>
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" id="includeGrade" name="includeGrade" checked>
+                            <label for="includeGrade">Grade Pokia</label>
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" id="includeDate" name="includeDate" checked>
+                            <label for="includeDate">Date de certification</label>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="generateLabel" class="submit-button">Prévisualiser l'étiquette</button>
+                </form>
+            </div>
+            
+            <div class="label-preview-section">
+                <h3>Prévisualisation de l'étiquette</h3>
+                <div class="label-preview" id="labelPreview">
+                    <div class="label-front">
+                        <div class="label-header">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo Pokia" class="label-logo">
+                            <h4>Certificat d'Authenticité</h4>
+                        </div>
+                        
+                        <div class="label-card-info">
+                            <div class="label-card-name">{{ card.name }}</div>
+                            <div class="label-card-details">
+                                <div class="label-detail">Type: {{ card.type }}</div>
+                                <div class="label-detail">Rareté: {{ card.rarity }}</div>
+                                {% if card.psa_grade %}
+                                <div class="label-detail">Grade Pokia: {{ card.psa_grade }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="label-certification">
+                            <div class="label-cert-id">ID: {{ card.id }}</div>
+                            <div class="label-cert-date">Date: {{ now.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="label-back">
+                        <div class="label-qr-section">
+                            <img src="{{ url_for('generate_auth_code', card_id=card.id) }}" alt="QR Code d'authenticité" class="label-qr">
+                            <div class="label-verify-text">Scannez pour vérifier l'authenticité</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="label-actions">
+                    <button id="printLabel" class="submit-button">Imprimer l'étiquette</button>
+                    <a href="{{ url_for('generate_auth_code', card_id=card.id) }}" class="button" download>Télécharger le QR Code</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .label-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+    
+    .instructions {
+        margin-bottom: 2rem;
+    }
+    
+    .label-options {
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .checkbox {
+        margin-bottom: 0.5rem;
+    }
+    
+    .label-preview-section {
+        margin-top: 2rem;
+    }
+    
+    .label-preview {
+        display: flex;
+        gap: 2rem;
+        margin: 1.5rem 0;
+    }
+    
+    .label-front, .label-back {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1rem;
+        width: 300px;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .label-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+    }
+    
+    .label-logo {
+        height: 40px;
+        margin-right: 1rem;
+    }
+    
+    .label-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .label-card-info {
+        margin-bottom: 1rem;
+    }
+    
+    .label-card-name {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .label-card-details {
+        font-size: 0.9rem;
+    }
+    
+    .label-detail {
+        margin-bottom: 0.3rem;
+    }
+    
+    .label-certification {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .label-qr-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+    
+    .label-qr {
+        width: 150px;
+        height: 150px;
+        margin-bottom: 1rem;
+    }
+    
+    .label-verify-text {
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    
+    .label-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .button {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        cursor: pointer;
+    }
+    
+    .button:hover {
+        background-color: #f0f0f0;
+    }
+    
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        #labelPreview, #labelPreview * {
+            visibility: visible;
+        }
+        
+        #labelPreview {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .label-preview {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const labelSizeSelect = document.getElementById('labelSize');
+        const includeName = document.getElementById('includeName');
+        const includeRarity = document.getElementById('includeRarity');
+        const includeGrade = document.getElementById('includeGrade');
+        const includeDate = document.getElementById('includeDate');
+        const labelPreview = document.getElementById('labelPreview');
+        
+        // Bouton de prévisualisation
+        document.getElementById('generateLabel').addEventListener('click', function() {
+            // Mise à jour de la taille
+            const size = labelSizeSelect.value;
+            if (size === 'small') {
+                labelPreview.style.transform = 'scale(0.8)';
+            } else if (size === 'medium') {
+                labelPreview.style.transform = 'scale(1)';
+            } else {
+                labelPreview.style.transform = 'scale(1.2)';
+            }
+            
+            // Mise à jour des informations affichées
+            document.querySelector('.label-card-name').style.display = includeName.checked ? 'block' : 'none';
+            
+            const rarityDetail = document.querySelector('.label-detail:contains("Rareté")');
+            if (rarityDetail) {
+                rarityDetail.style.display = includeRarity.checked ? 'block' : 'none';
+            }
+            
+            const gradeDetail = document.querySelector('.label-detail:contains("Grade")');
+            if (gradeDetail) {
+                gradeDetail.style.display = includeGrade.checked ? 'block' : 'none';
+            }
+            
+            document.querySelector('.label-cert-date').style.display = includeDate.checked ? 'block' : 'none';
+        });
+        
+        // Bouton d'impression
+        document.getElementById('printLabel').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Helper pour jQuery-like contains
+        document.querySelectorAll = document.querySelectorAll || function(selector) {
+            return Array.from(document.querySelectorAll(selector)).filter(function(el) {
+                return el.textContent.includes(selector.replace(':contains("', '').replace('")', ''));
+            });
+        };
+    });
+</script>
+{% endblock %}

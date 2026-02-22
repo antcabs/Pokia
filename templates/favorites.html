@@ -1,0 +1,298 @@
+{% extends "layout.html" %}
+
+{% block title %}Mes Cartes Favorites{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/market.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .favorites-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .favorites-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .favorites-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+    
+    .favorites-container {
+        padding: 20px 0;
+    }
+    
+    .no-favorites {
+        text-align: center;
+        padding: 40px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .no-favorites i {
+        font-size: 3rem;
+        color: #ccc;
+        margin-bottom: 15px;
+    }
+    
+    .no-favorites h3 {
+        margin-bottom: 10px;
+        color: #555;
+    }
+    
+    .no-favorites .shop-link {
+        display: inline-block;
+        margin-top: 15px;
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+    
+    .no-favorites .shop-link:hover {
+        background-color: #0069d9;
+    }
+    
+    .empty-heart-icon {
+        color: #ff6b6b;
+    }
+    
+    /* Cards grid */
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 25px;
+    }
+    
+    /* Card item */
+    .card-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        background-color: #fff;
+    }
+    
+    .card-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-img-container {
+        position: relative;
+        padding-top: 140%; /* Aspect ratio for card image */
+        overflow: hidden;
+    }
+    
+    .card-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform 0.5s;
+    }
+    
+    .card-item:hover .card-img {
+        transform: scale(1.05);
+    }
+    
+    .card-badges {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .grade-badge {
+        background-color: #ffc107;
+        color: #333;
+    }
+    
+    .rarity-badge {
+        background-color: #6f42c1;
+        color: white;
+    }
+    
+    .remove-favorite {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #ff6b6b;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s;
+        z-index: 2;
+    }
+    
+    .remove-favorite:hover {
+        background-color: #ff6b6b;
+        color: white;
+    }
+    
+    .card-info {
+        padding: 15px;
+    }
+    
+    .card-name {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .card-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    .card-price {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .current-price {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #333;
+    }
+    
+    .price-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .old-price {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 0.85rem;
+    }
+    
+    .discount {
+        background-color: #ff6b6b;
+        color: white;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 5px;
+    }
+    
+    .view-details {
+        display: block;
+        text-align: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        color: #333;
+        text-decoration: none;
+        border-top: 1px solid #e0e0e0;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+    
+    .view-details:hover {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="favorites-section">
+    <div class="container">
+        <div class="favorites-header">
+            <h1>Mes Cartes Favorites</h1>
+            <p>Retrouvez ici toutes les cartes que vous avez ajoutées à vos favoris</p>
+        </div>
+        
+        <div class="favorites-container">
+            {% if favorite_cards %}
+                <div class="cards-grid">
+                    {% for card in favorite_cards %}
+                    <div class="card-item">
+                        <div class="card-img-container">
+                            <div class="card-badges">
+                                {% if card.psa_grade %}
+                                <span class="badge grade-badge">{{ card.psa_grade }}</span>
+                                {% endif %}
+                                {% if card.rarity in ['Ultra Rare', 'Secrète', 'Hyper Rare', 'Rainbow', 'Shiny'] %}
+                                <span class="badge rarity-badge">{{ card.rarity }}</span>
+                                {% endif %}
+                            </div>
+                            <form action="{{ url_for('toggle_favorite', card_id=card.id) }}" method="POST" class="favorite-form">
+                                <button type="submit" class="remove-favorite" title="Retirer des favoris">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </form>
+                            <img src="{{ url_for('static', filename=card.image_path) }}" alt="{{ card.name }}" class="card-img">
+                        </div>
+                        <div class="card-info">
+                            <h3 class="card-name">{{ card.name }}</h3>
+                            <div class="card-meta">
+                                <span class="card-type">{{ card.type }}</span>
+                                <span class="card-rarity">{{ card.rarity }}</span>
+                            </div>
+                            <div class="card-price">
+                                <div class="price-info">
+                                    <span class="current-price">{{ "%.2f"|format(card.price) }} €</span>
+                                    {% if card.old_price %}
+                                    <div>
+                                        <span class="old-price">{{ "%.2f"|format(card.old_price) }} €</span>
+                                        <span class="discount">-{{ ((1 - card.price / card.old_price) * 100)|round|int }}%</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <form action="{{ url_for('add_to_cart', card_id=card.id) }}" method="POST">
+                                    <button type="submit" class="add-cart-btn" title="Ajouter au panier">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('card_details', card_id=card.id) }}" class="view-details">Voir les détails</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-favorites">
+                    <i class="far fa-heart empty-heart-icon"></i>
+                    <h3>Vous n'avez pas encore de cartes en favoris</h3>
+                    <p>Parcourez notre marketplace et ajoutez des cartes à vos favoris pour les retrouver ici</p>
+                    <a href="{{ url_for('marketplace') }}" class="shop-link">
+                        <i class="fas fa-store"></i> Explorer la marketplace
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

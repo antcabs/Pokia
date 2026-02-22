@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POKIA Scanner - Détection ML</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #a855f7, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .scanner-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .video-section {
+            flex: 1;
+            min-width: 640px;
+            max-width: 800px;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 2px solid #a855f7;
+        }
+        
+        .video-wrapper img {
+            width: 100%;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-dot.inactive {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        .controls-section {
+            width: 300px;
+        }
+        
+        .control-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-panel h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #a855f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .control-group label:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .control-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #a855f7;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .legend h4 {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        .legend-color.violet { background: #a855f7; }
+        .legend-color.green { background: #22c55e; }
+        .legend-color.orange { background: #f97316; }
+        .legend-color.magenta { background: #ec4899; }
+        
+        .capture-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+        
+        .capture-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(168, 85, 247, 0.5);
+        }
+        
+        .capture-btn:active {
+            transform: translateY(0);
+        }
+        
+        .capture-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #22c55e;
+            display: block;
+        }
+        
+        .message.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            display: block;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: #a855f7;
+        }
+        
+        @media (max-width: 768px) {
+            .scanner-container {
+                flex-direction: column;
+            }
+            
+            .video-section {
+                min-width: 100%;
+            }
+            
+            .controls-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            ← Retour à l'accueil
+        </a>
+        
+        <div class="header">
+            <h1>🔍 POKIA Scanner</h1>
+            <p>Détection ML en temps réel - Alignez votre carte pour l'analyse</p>
+        </div>
+        
+        <div class="scanner-container">
+            <div class="video-section">
+                <div class="video-wrapper">
+                    <img id="video-feed" src="/video_feed" alt="Flux caméra">
+                    <div class="video-overlay">
+                        <div class="status-indicator">
+                            <div class="status-dot" id="status-dot"></div>
+                            <span id="status-text">Détection active</span>
+                        </div>
+                        <span id="fps-counter">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-panel">
+                    <h3>⚙️ Options d'affichage</h3>
+                    
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="show-corners" checked>
+                            <span>Zones de coins</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="show-edges" checked>
+                            <span>Zones de bords</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="show-centering" checked>
+                            <span>Lignes de centrage</span>
+                        </label>
+                    </div>
+                    
+                    <div class="legend">
+                        <h4>Légende des couleurs</h4>
+                        <div class="legend-item">
+                            <div class="legend-color violet"></div>
+                            <span>Contour de la carte</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color green"></div>
+                            <span>Zones des coins (C1-C4)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color orange"></div>
+                            <span>Analyse des bords</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color magenta"></div>
+                            <span>Centrage de la carte</span>
+                        </div>
+                    </div>
+                    
+                    <button class="capture-btn" id="capture-btn" onclick="captureImage()">
+                        📸 Capturer et Analyser
+                    </button>
+                    
+                    <div class="message" id="message"></div>
+                </div>
+                
+                <!-- Section des résultats de gradation -->
+                <div class="results-section" id="results-section">
+                    <h3>📊 Résultats de l'analyse</h3>
+                    
+                    <div class="grade-display">
+                        <div class="grade-psa" id="grade-psa">-</div>
+                        <div class="grade-description" id="grade-description">-</div>
+                        <div class="grade-total" id="grade-total">-</div>
+                    </div>
+                    
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">Coins</div>
+                            <div class="detail-value" id="coins-value">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Bords</div>
+                            <div class="detail-value" id="bords-value">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Centrage</div>
+                            <div class="detail-value" id="centrage-value">-</div>
+                        </div>
+                    </div>
+                    
+                    <img class="analyzed-image" id="analyzed-image" style="display: none;" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Gestion des options d'affichage
+        const checkboxes = ['show-corners', 'show-edges', 'show-centering'];
+        
+        checkboxes.forEach(id => {
+            document.getElementById(id).addEventListener('change', updateConfig);
+        });
+        
+        function updateConfig() {
+            const config = {
+                show_corners: document.getElementById('show-corners').checked,
+                show_edges: document.getElementById('show-edges').checked,
+                show_centering: document.getElementById('show-centering').checked
+            };
+            
+            fetch('/scanner/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+        }
+        
+        // Capture et analyse d'image
+        function captureImage() {
+            const btn = document.getElementById('capture-btn');
+            const message = document.getElementById('message');
+            const resultsSection = document.getElementById('results-section');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Capture en cours...';
+            resultsSection.classList.remove('active');
+            message.style.display = 'none';
+            
+            // Étape 1: Capturer l'image
+            fetch('/capture', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        message.className = 'message success';
+                        message.textContent = '✅ Capture réussie! Analyse en cours...';
+                        message.style.display = 'block';
+                        btn.textContent = '🔍 Analyse en cours...';
+                        
+                        // Étape 2: Analyser l'image capturée
+                        return fetch('/analyze_capture', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: data.path })
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        message.textContent = '✅ Analyse terminée!';
+                        
+                        // Afficher les résultats
+                        document.getElementById('grade-psa').textContent = 'PSA ' + data.note_psa;
+                        document.getElementById('grade-description').textContent = data.description_psa;
+                        document.getElementById('grade-total').textContent = data.note_globale + ' / 80 points';
+                        
+                        document.getElementById('coins-value').textContent = data.details.coins + ' / 30';
+                        document.getElementById('bords-value').textContent = data.details.bords + ' / 30';
+                        document.getElementById('centrage-value').textContent = data.details.centrage + ' / 20';
+                        
+                        // Afficher l'image annotée si disponible
+                        if (data.image_annotee) {
+                            const img = document.getElementById('analyzed-image');
+                            img.src = 'data:image/jpeg;base64,' + data.image_annotee;
+                            img.style.display = 'block';
+                        }
+                        
+                        resultsSection.classList.add('active');
+                        
+                        // Faire défiler vers les résultats
+                        setTimeout(() => {
+                            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 300);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    message.className = 'message error';
+                    message.textContent = '❌ Erreur: ' + error.message;
+                    message.style.display = 'block';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = '📸 Capturer et Analyser';
+                });
+        }
+        
+        // Vérifier le statut du scanner
+        function checkStatus() {
+            fetch('/scanner/status')
+                .then(response => response.json())
+                .then(data => {
+                    const dot = document.getElementById('status-dot');
+                    const text = document.getElementById('status-text');
+                    
+                    if (data.camera_available) {
+                        dot.className = 'status-dot';
+                        text.textContent = 'Détection active';
+                    } else {
+                        dot.className = 'status-dot inactive';
+                        text.textContent = 'Caméra non disponible';
+                    }
+                });
+        }
+        
+        // Vérifier le statut toutes les 5 secondes
+        setInterval(checkStatus, 5000);
+        checkStatus();
+    </script>
+</body>
+</html>

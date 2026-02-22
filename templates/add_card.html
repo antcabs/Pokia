@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block title %}Ajouter une carte Pokémon{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/market.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="add-card-section">
+    <div class="container">
+        <div class="form-header">
+            <h2>Ajouter une nouvelle carte</h2>
+            <p>Complétez le formulaire ci-dessous pour ajouter une carte à la marketplace</p>
+        </div>
+        
+        <form action="{{ url_for('add_card') }}" method="POST" enctype="multipart/form-data" class="card-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="card_name">Nom de la carte *</label>
+                    <input type="text" id="card_name" name="card_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_type">Type *</label>
+                    <select id="card_type" name="card_type" required>
+                        <option value="">Sélectionner un type</option>
+                        <option value="Feu">Feu</option>
+                        <option value="Eau">Eau</option>
+                        <option value="Plante">Plante</option>
+                        <option value="Électrique">Électrique</option>
+                        <option value="Psy">Psy</option>
+                        <option value="Combat">Combat</option>
+                        <option value="Ténèbres">Ténèbres</option>
+                        <option value="Métal">Métal</option>
+                        <option value="Fée">Fée</option>
+                        <option value="Dragon">Dragon</option>
+                        <option value="Incolore">Incolore</option>
+                        <option value="Spectre">Spectre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_rarity">Rareté *</label>
+                    <select id="card_rarity" name="card_rarity" required>
+                        <option value="">Sélectionner une rareté</option>
+                        <option value="Commune">Commune</option>
+                        <option value="Peu commune">Peu commune</option>
+                        <option value="Rare">Rare</option>
+                        <option value="Ultra Rare">Ultra Rare</option>
+                        <option value="Secrète">Secrète</option>
+                        <option value="Hyper Rare">Hyper Rare</option>
+                        <option value="Rainbow">Rainbow</option>
+                        <option value="Shiny">Shiny</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="psa_grade">Note POKIA (optionnel)</label>
+                    <select id="psa_grade" name="psa_grade">
+                        <option value="">Aucune</option>
+                        <option value="PSA 10">POKIA 10</option>
+                        <option value="PSA 9">POKIA 9</option>
+                        <option value="PSA 8">POKIA 8</option>
+                        <option value="PSA 7">POKIA 7</option>
+                        <option value="PSA 6">POKIA 6</option>
+                        <option value="PSA 5">POKIA 5</option>
+                        <option value="PSA 4">POKIA 4</option>
+                        <option value="PSA 3">POKIA 3</option>
+                        <option value="PSA 2">POKIA 2</option>
+                        <option value="PSA 1">POKIA 1</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_price">Prix (€) *</label>
+                    <input type="number" id="card_price" name="card_price" step="0.01" min="0" required>
+                </div>
+                
+                
+                <div class="form-group full-width">
+                    <label for="card_description">Description</label>
+                    <textarea id="card_description" name="card_description" rows="4"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card_image">Image de la carte *</label>
+                    <div class="file-input-container">
+                        <input type="file" id="card_image" name="card_image" accept="image/*" required>
+                        <label for="card_image" class="file-input-label">
+                            <i class="fas fa-upload"></i> Choisir une image
+                        </label>
+                        <span class="file-name">Aucun fichier choisi</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="secondary-btn" onclick="window.history.back()">Annuler</button>
+                <button type="submit" class="primary-btn">Ajouter la carte</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Script pour afficher le nom du fichier sélectionné
+    document.getElementById('card_image').addEventListener('change', function(e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Aucun fichier choisi';
+        document.querySelector('.file-name').textContent = fileName;
+    });
+</script>
+{% endblock %}

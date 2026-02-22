@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block title %}À propos - Analyseur de Cartes Pokémon{% endblock %}
+
+{% block content %}
+<div class="about-container">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>À propos de l'Analyseur de Cartes Pokémon</h2>
+        </div>
+        <div class="card-body">
+            <div class="about-section">
+                <h3>Qu'est-ce que l'Analyseur de Cartes Pokémon?</h3>
+                <p>L'Analyseur de Cartes Pokémon est un outil utilisant la vision par ordinateur et l'intelligence artificielle pour évaluer la qualité des cartes Pokémon et estimer leur note Pokia.</p>
+                
+                <h3>Comment fonctionne l'analyse?</h3>
+                <p>Notre système analyse plusieurs aspects critiques de vos cartes:</p>
+                <ul class="about-list">
+                    <li><span class="highlight">Coins (30 points)</span>: Évalue la netteté et l'usure des quatre coins de la carte.</li>
+                    <li><span class="highlight">Bords (30 points)</span>: Analyse la rectitude et l'état des bords de la carte.</li>
+                    <li><span class="highlight">Surface (20 points)</span>: Détecte les rayures, les taches et autres imperfections de surface.</li>
+                    <li><span class="highlight">Centrage (20 points)</span>: Mesure la précision du centrage de l'illustration sur la carte.</li>
+                </ul>
+                <p>Les résultats sont combinés pour obtenir une note globale sur 100, puis convertis en une estimation de note Pokia entre 1 et 10.</p>
+                
+                <div class="psa-scale">
+                    <h3>Échelle de notation Pokia</h3>
+                    <table class="psa-table">
+                        <thead>
+                            <tr>
+                                <th>Note Pokia</th>
+                                <th>Description</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10</td>
+                                <td>Gem Mint</td>
+                                <td>98-100</td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td>Mint</td>
+                                <td>93-97</td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td>Near Mint-Mint</td>
+                                <td>85-92</td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td>Near Mint</td>
+                                <td>75-84</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>Excellent-Near Mint</td>
+                                <td>65-74</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>Excellent</td>
+                                <td>55-64</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>Very Good-Excellent</td>
+                                <td>45-54</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Very Good</td>
+                                <td>35-44</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Good</td>
+                                <td>25-34</td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>Poor</td>
+                                <td>1-24</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h3>Important à savoir</h3>
+                <p>Cet outil fournit une estimation basée sur des algorithmes d'analyse d'image et n'est pas une évaluation officielle. </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

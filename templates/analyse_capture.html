@@ -1,0 +1,368 @@
+{% extends "layout.html" %}
+{% block title %}Analyse de capture - POKIA{% endblock %}
+
+{% block content %}
+<style>
+    .analyse-container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 24px 20px;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 20px;
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    .back-link:hover { color: #a855f7; }
+
+    h1 {
+        font-size: 1.8rem;
+        background: linear-gradient(90deg, #a855f7, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 20px;
+    }
+
+    .capture-preview {
+        text-align: center;
+        margin-bottom: 28px;
+        background: rgba(0,0,0,0.04);
+        border-radius: 14px;
+        padding: 16px;
+        border: 1px solid rgba(168,85,247,0.2);
+    }
+    .capture-preview img {
+        max-width: 100%;
+        max-height: 480px;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .capture-preview p {
+        margin-top: 10px;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+
+    .analyse-form {
+        background: #f8f5ff;
+        padding: 28px;
+        border-radius: 14px;
+        border: 1px solid rgba(168,85,247,0.15);
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+    .form-group select {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 15px;
+        background: #fff;
+        color: #374151;
+        transition: border-color 0.2s;
+    }
+    .form-group select:focus {
+        outline: none;
+        border-color: #a855f7;
+        box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        cursor: pointer;
+    }
+    .checkbox-group input[type="checkbox"] {
+        width: 18px; height: 18px;
+        accent-color: #a855f7;
+    }
+
+    .btn-analyse {
+        width: 100%;
+        padding: 14px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 8px;
+    }
+    .btn-analyse:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(168,85,247,0.5);
+    }
+
+    /* Résultats */
+    .results-section {
+        margin-top: 28px;
+        display: none;
+    }
+    .results-section.visible { display: block; }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 600px) { .results-grid { grid-template-columns: 1fr; } }
+
+    .result-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px;
+        border: 1px solid rgba(168,85,247,0.2);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .result-card h3 {
+        font-size: 1rem;
+        color: #7c3aed;
+        margin-bottom: 12px;
+        display: flex; align-items: center; gap: 6px;
+    }
+
+    .score-bar-wrap { margin-bottom: 10px; }
+    .score-bar-label {
+        display: flex; justify-content: space-between;
+        font-size: 0.82rem; color: #6b7280; margin-bottom: 4px;
+    }
+    .score-bar-track {
+        height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;
+    }
+    .score-bar-fill {
+        height: 100%; border-radius: 4px;
+        background: linear-gradient(90deg, #a855f7, #6366f1);
+        transition: width 0.6s ease;
+    }
+
+    .psa-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        color: #fff;
+        margin-top: 8px;
+    }
+
+    .combined-card {
+        background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        color: #fff;
+        border-radius: 14px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .combined-card h3 { color: #fff; font-size: 1.1rem; margin-bottom: 8px; }
+    .combined-score { font-size: 2.5rem; font-weight: 800; }
+    .combined-psa { font-size: 1rem; opacity: 0.85; margin-top: 4px; }
+
+    .btn-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-pdf:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -8px rgba(239,68,68,0.5);
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 16px; height: 16px;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="analyse-container">
+    <a href="{{ url_for('scanner_page') }}" class="back-link">← Retour au scanner</a>
+
+    <h1>📸 Analyse de la capture</h1>
+
+    <div class="capture-preview">
+        <img src="/{{ image_path }}" alt="Capture">
+        <p>Fichier : {{ filename }}</p>
+    </div>
+
+    <form id="analyse-form" class="analyse-form" onsubmit="lancerAnalyse(event)">
+        <input type="hidden" name="captured_file" value="{{ image_path }}">
+
+        <div class="form-group">
+            <label>Face de la carte :</label>
+            <select name="card_side" id="card_side">
+                <option value="front">🎴 Devant (Front)</option>
+                <option value="back">🔙 Dos (Back)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="checkbox-group">
+                <input type="checkbox" name="use_ml" id="use_ml" checked>
+                <span>Utiliser l'analyse Machine Learning (recommandé)</span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn-analyse" id="btn-analyse">
+            🔍 Lancer l'analyse POKIA
+        </button>
+    </form>
+
+    <!-- Résultats -->
+    <div class="results-section" id="results-section">
+        <div class="combined-card" id="combined-card" style="display:none;">
+            <h3>⭐ Résultat Global</h3>
+            <div class="combined-score" id="combined-score">—</div>
+            <div class="combined-psa" id="combined-psa">—</div>
+        </div>
+
+        <div class="results-grid" id="results-grid"></div>
+
+        <div style="text-align:center;margin-top:16px;" id="pdf-section" style="display:none;">
+            <a id="pdf-link" href="#" class="btn-pdf" onclick="return false;">
+                📄 Télécharger le Rapport PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    let analysisSessionId = null;
+
+    function lancerAnalyse(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-analyse');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Analyse en cours...';
+
+        const formData = new FormData(document.getElementById('analyse-form'));
+
+        fetch('{{ url_for("upload_file") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => {
+            // Si la réponse est une redirection vers result_complete.html
+            if (r.redirected) {
+                window.location.href = r.url;
+                return null;
+            }
+            // Sinon essayer JSON
+            const ct = r.headers.get('content-type') || '';
+            if (ct.includes('application/json')) return r.json();
+            // Sinon rediriger vers la page reçue
+            return r.text().then(html => {
+                document.open(); document.write(html); document.close();
+                return null;
+            });
+        })
+        .then(data => {
+            if (!data) return;
+            if (data.success === false) {
+                alert('Erreur : ' + (data.message || 'Analyse échouée'));
+                btn.disabled = false;
+                btn.textContent = '🔍 Lancer l\'analyse POKIA';
+                return;
+            }
+            // Afficher les résultats JSON si disponibles
+            if (data.session_id) {
+                analysisSessionId = data.session_id;
+                afficherResultats(data);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.textContent = '🔍 Lancer l\'analyse POKIA';
+        });
+    }
+
+    function afficherResultats(data) {
+        const section = document.getElementById('results-section');
+        section.classList.add('visible');
+
+        const grid = document.getElementById('results-grid');
+        grid.innerHTML = '';
+
+        function buildCard(title, icon, res) {
+            if (!res) return '';
+            return `<div class="result-card">
+                <h3>${icon} ${title}</h3>
+                ${barRow('Coins', res.coins, 30)}
+                ${barRow('Bords', res.bords, 30)}
+                ${barRow('Centrage', res.centrage, 20)}
+                ${barRow('Total', res.note_globale, 80)}
+                <div class="psa-badge">PSA ${res.note_psa} — ${res.description_psa}</div>
+            </div>`;
+        }
+
+        if (data.front) grid.innerHTML += buildCard('RECTO', '🎴', data.front);
+        if (data.back)  grid.innerHTML += buildCard('VERSO', '🔙', data.back);
+
+        if (data.note_combinee !== null && data.note_combinee !== undefined) {
+            const cc = document.getElementById('combined-card');
+            cc.style.display = 'block';
+            document.getElementById('combined-score').textContent = data.note_combinee + '/80';
+            document.getElementById('combined-psa').textContent =
+                'Grade POKIA : PSA ' + data.psa_combine;
+        }
+
+        if (data.session_id) {
+            const pdfSec = document.getElementById('pdf-section');
+            pdfSec.style.display = 'block';
+            const pdfLink = document.getElementById('pdf-link');
+            pdfLink.href = '/scanner/generate_pdf/' + data.session_id;
+            pdfLink.onclick = null;
+        }
+    }
+
+    function barRow(label, val, max) {
+        const pct = Math.round((val / max) * 100);
+        return `<div class="score-bar-wrap">
+            <div class="score-bar-label">
+                <span>${label}</span>
+                <span>${val}/${max} (${pct}%)</span>
+            </div>
+            <div class="score-bar-track">
+                <div class="score-bar-fill" style="width:${pct}%"></div>
+            </div>
+        </div>`;
+    }
+</script>
+{% endblock %}

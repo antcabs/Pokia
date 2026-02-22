@@ -1,0 +1,494 @@
+{% extends "layout.html" %}
+
+{% block title %}Toutes les annonces - POKIA Marketplace{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/market.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/all-listings.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .listings-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .listings-header h1 {
+        font-size: 32px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .listings-header p {
+        color: #666;
+        font-size: 16px;
+    }
+    
+    .filters-bar {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .filter-group select, .filter-group input {
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        background-color: white;
+    }
+    
+    .search-box {
+        position: relative;
+        flex-grow: 1;
+        max-width: 400px;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 10px 40px 10px 15px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    
+    .search-box button {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+    }
+    
+    .sort-by {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .sort-by label {
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .listings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .card-item {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+    }
+    
+    .card-image {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    
+    .card-image:hover img {
+        transform: scale(1.05);
+    }
+    
+    .card-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .rare-badge {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .psa-badge {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .card-content {
+        padding: 15px;
+    }
+    
+    .card-type {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    
+    .card-title {
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .card-price {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .current-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+    }
+    
+    .old-price {
+        font-size: 14px;
+        color: #999;
+        text-decoration: line-through;
+    }
+    
+    .card-actions {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .view-btn, .add-cart-btn {
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s;
+    }
+    
+    .view-btn i, .add-cart-btn i {
+        margin-right: 5px;
+    }
+    
+    .view-btn {
+        color: #555;
+        background-color: #f1f3f5;
+    }
+    
+    .view-btn:hover {
+        background-color: #e9ecef;
+    }
+    
+    .add-cart-btn {
+        color: white;
+        background-color: #007bff;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .add-cart-btn:hover {
+        background-color: #0069d9;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 40px;
+        margin-bottom: 20px;
+    }
+    
+    .pagination-item {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        color: #333;
+        border: 1px solid #ddd;
+        margin: 0 5px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .pagination-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .pagination-item.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 40px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 40px;
+    }
+    
+    .no-results i {
+        font-size: 48px;
+        color: #ccc;
+        margin-bottom: 15px;
+    }
+    
+    .no-results h2 {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .no-results p {
+        color: #666;
+        margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .filters-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-group, .sort-by {
+            width: 100%;
+        }
+        
+        .search-box {
+            max-width: 100%;
+        }
+        
+        .listings-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="listings-section">
+    <div class="container">
+        <div class="listings-header">
+            <h1>Toutes les annonces</h1>
+            <p>Découvrez notre collection de cartes Pokémon rares et authentifiées</p>
+        </div>
+        
+        <div class="filters-bar">
+            <div class="filter-group">
+                <select id="type-filter">
+                    <option value="">Type</option>
+                    <option value="feu">Feu</option>
+                    <option value="eau">Eau</option>
+                    <option value="plante">Plante</option>
+                    <option value="electrique">Électrique</option>
+                    <option value="psy">Psy</option>
+                    <option value="combat">Combat</option>
+                    <option value="tenebre">Ténèbres</option>
+                    <option value="metal">Métal</option>
+                    <option value="fee">Fée</option>
+                    <option value="dragon">Dragon</option>
+                    <option value="normal">Normal</option>
+                </select>
+                
+                <select id="rarity-filter">
+                    <option value="">Rareté</option>
+                    <option value="commune">Commune</option>
+                    <option value="peu-commune">Peu commune</option>
+                    <option value="rare">Rare</option>
+                    <option value="ultra-rare">Ultra Rare</option>
+                    <option value="secrete">Secrète</option>
+                    <option value="hyper-rare">Hyper Rare</option>
+                    <option value="rainbow">Rainbow</option>
+                    <option value="shiny">Shiny</option>
+                </select>
+                
+                <select id="grade-filter">
+                    <option value="">Grade POKIA</option>
+                    <option value="psa-10">POKIA 10</option>
+                    <option value="psa-9">POKIA 9</option>
+                    <option value="psa-8">POKIA 8</option>
+                    <option value="psa-7">POKIA 7</option>
+                    <option value="non-grade">Non gradé</option>
+                </select>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" placeholder="Rechercher une carte...">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="sort-by">
+                <label>Trier par:</label>
+                <select id="sort-option">
+                    <option value="price-asc">Prix croissant</option>
+                    <option value="price-desc">Prix décroissant</option>
+                    <option value="newest">Plus récent</option>
+                    <option value="alpha">A-Z</option>
+                </select>
+            </div>
+        </div>
+        
+        {% if cards %}
+            <div class="listings-grid">
+                {% for card in cards %}
+                <div class="card-item">
+                    <div class="card-image">
+                        <a href="{{ url_for('card_details', card_id=card.id) }}">
+                            <img src="{{ url_for('static', filename=card.image_path) }}" alt="{{ card.name }}">
+                        </a>
+                        {% if card.psa_grade %}
+                            <span class="card-badge psa-badge">{{ card.psa_grade }}</span>
+                        {% elif card.rarity in ['Ultra Rare', 'Secrète', 'Hyper Rare', 'Rainbow', 'Shiny'] %}
+                            <span class="card-badge rare-badge">{{ card.rarity }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-content">
+                        <div class="card-type">{{ card.type }}</div>
+                        <h3 class="card-title">{{ card.name }}</h3>
+                        <div class="card-price">
+                            <span class="current-price">{{ "%.2f"|format(card.price) }} €</span>
+                            {% if card.old_price %}
+                                <span class="old-price">{{ "%.2f"|format(card.old_price) }} €</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-actions">
+                            <a href="{{ url_for('card_details', card_id=card.id) }}" class="view-btn">
+                                <i class="fas fa-eye"></i> Voir
+                            </a>
+                            <form action="{{ url_for('add_to_cart', card_id=card.id) }}" method="POST">
+                                <button type="submit" class="add-cart-btn">
+                                    <i class="fas fa-cart-plus"></i> Ajouter
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination %}
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('all_listings', page=pagination.prev_page) }}" class="pagination-item">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                
+                {% for page in range(1, pagination.total_pages + 1) %}
+                    {% if page == pagination.page %}
+                        <span class="pagination-item active">{{ page }}</span>
+                    {% else %}
+                        <a href="{{ url_for('all_listings', page=page) }}" class="pagination-item">{{ page }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('all_listings', page=pagination.next_page) }}" class="pagination-item">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="no-results">
+                <i class="fas fa-search"></i>
+                <h2>Aucune annonce trouvée</h2>
+                <p>Essayez de modifier vos filtres ou revenez plus tard.</p>
+                <a href="{{ url_for('marketplace') }}" class="btn-primary">Retour à la marketplace</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    // Fonction pour filtrer et trier les cartes
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeFilter = document.getElementById('type-filter');
+        const rarityFilter = document.getElementById('rarity-filter');
+        const gradeFilter = document.getElementById('grade-filter');
+        const searchBox = document.querySelector('.search-box input');
+        const sortOption = document.getElementById('sort-option');
+        
+        // Fonction pour appliquer les filtres
+        function applyFilters() {
+            // Cette fonction serait généralement utilisée pour soumettre un formulaire
+            // ou effectuer une requête AJAX pour filtrer les résultats
+            
+            // Pour l'instant, nous ajoutons simplement les paramètres à l'URL
+            const params = new URLSearchParams();
+            
+            if (typeFilter.value) params.append('type', typeFilter.value);
+            if (rarityFilter.value) params.append('rarity', rarityFilter.value);
+            if (gradeFilter.value) params.append('grade', gradeFilter.value);
+            if (searchBox.value.trim()) params.append('query', searchBox.value.trim());
+            if (sortOption.value) params.append('sort', sortOption.value);
+            
+            // Rediriger vers la même page avec les filtres appliqués
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
+        }
+        
+        // Ajouter des événements de changement
+        typeFilter.addEventListener('change', applyFilters);
+        rarityFilter.addEventListener('change', applyFilters);
+        gradeFilter.addEventListener('change', applyFilters);
+        sortOption.addEventListener('change', applyFilters);
+        
+        // Événement pour la recherche
+        document.querySelector('.search-box button').addEventListener('click', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+        
+        // Permettre la recherche en appuyant sur Entrée
+        searchBox.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyFilters();
+            }
+        });
+        
+        // Pré-remplir les filtres à partir des paramètres d'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('type')) typeFilter.value = urlParams.get('type');
+        if (urlParams.has('rarity')) rarityFilter.value = urlParams.get('rarity');
+        if (urlParams.has('grade')) gradeFilter.value = urlParams.get('grade');
+        if (urlParams.has('query')) searchBox.value = urlParams.get('query');
+        if (urlParams.has('sort')) sortOption.value = urlParams.get('sort');
+    });
+</script>
+{% endblock %}

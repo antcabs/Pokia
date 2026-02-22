@@ -1,0 +1,174 @@
+{% extends "layout.html" %}
+
+{% block title %}Détails de la commande - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/order-details.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="order-details-section">
+    <div class="container">
+        <div class="order-details-header">
+            <div class="back-link">
+                <a href="{{ url_for('order_history') }}"><i class="fas fa-arrow-left"></i> Retour aux commandes</a>
+            </div>
+            <h1>Commande #{{ order.id }}</h1>
+            <div class="order-meta">
+                <span class="order-date">{{ order.order_date.strftime('%d/%m/%Y à %H:%M') }}</span>
+                <span class="order-status status-{{ order.status }}">{{ order.status }}</span>
+            </div>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="order-details-content">
+            <div class="order-info-section">
+                <div class="order-info-box shipping-info">
+                    <h2><i class="fas fa-map-marker-alt"></i> Adresse de livraison</h2>
+                    <div class="info-content">
+                        <p>{{ order.shipping_address|nl2br }}</p>
+                    </div>
+                </div>
+                
+                <div class="order-info-box payment-info">
+                    <h2><i class="fas fa-credit-card"></i> Information de paiement</h2>
+                    <div class="info-content">
+                        <div class="payment-method">
+                            <span class="label">Méthode:</span>
+                            <span class="value">Carte de crédit</span>
+                        </div>
+                        <div class="payment-status">
+                            <span class="label">Statut:</span>
+                            <span class="value">Payé</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="order-info-box contact-info">
+                    <h2><i class="fas fa-envelope"></i> Besoin d'aide?</h2>
+                    <div class="info-content">
+                        <p>Si vous avez des questions concernant votre commande, n'hésitez pas à nous contacter.</p>
+                        <a href="#" class="btn-contact">Contacter le support</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="order-items-section">
+                <h2>Articles commandés</h2>
+                
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <div class="item-image">
+                            <img src="{{ url_for('static', filename=item.card.image_path) }}" alt="{{ item.card.name }}">
+                        </div>
+                        <div class="item-details">
+                            <h3>{{ item.card.name }}</h3>
+                            <div class="item-meta">
+                                <span class="item-type">{{ item.card.type }}</span>
+                                {% if item.card.psa_grade %}
+                                <span class="item-grade">{{ item.card.psa_grade }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="item-price-qty">
+                                <span class="item-price">{{ "%.2f"|format(item.price_at_purchase) }} €</span>
+                                <span class="item-qty">x {{ item.quantity }}</span>
+                            </div>
+                        </div>
+                        <div class="item-total">
+                            {{ "%.2f"|format(item.price_at_purchase * item.quantity) }} €
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Sous-total</span>
+                        <span>{{ "%.2f"|format(order.total_amount) }} €</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Frais de livraison</span>
+                        <span>Gratuit</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span>{{ "%.2f"|format(order.total_amount) }} €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="order-timeline">
+            <h2>Suivi de commande</h2>
+            <div class="timeline">
+                <div class="timeline-item active">
+                    <div class="timeline-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Commande reçue</h3>
+                        <p>Votre commande a été reçue et est en attente de traitement.</p>
+                        <span class="timeline-date">{{ order.order_date.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                    <div class="timeline-icon">
+                        {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}
+                        <i class="fas fa-check"></i>
+                        {% else %}
+                        <i class="fas fa-clock"></i>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-content">
+                        <h3>En cours de traitement</h3>
+                        <p>Votre commande est en cours de préparation pour l'expédition.</p>
+                        <span class="timeline-date">-</span>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+                    <div class="timeline-icon">
+                        {% if order.status == 'shipped' or order.status == 'delivered' %}
+                        <i class="fas fa-check"></i>
+                        {% else %}
+                        <i class="fas fa-clock"></i>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Expédiée</h3>
+                        <p>Votre commande a été expédiée et est en cours de livraison.</p>
+                        <span class="timeline-date">-</span>
+                    </div>
+                </div>
+                
+                <div class="timeline-item {% if order.status == 'delivered' %}active{% endif %}">
+                    <div class="timeline-icon">
+                        {% if order.status == 'delivered' %}
+                        <i class="fas fa-check"></i>
+                        {% else %}
+                        <i class="fas fa-clock"></i>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-content">
+                        <h3>Livrée</h3>
+                        <p>Votre commande a été livrée avec succès.</p>
+                        <span class="timeline-date">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

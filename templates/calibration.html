@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POKIA — Calibration</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  :root {
+    --v900:#1e0a3c; --v800:#2d1060; --v700:#4c1d95;
+    --v600:#6d28d9; --v500:#7c3aed; --v400:#8b5cf6;
+    --v300:#a78bfa; --v200:#c4b5fd;
+    --white:#fff; --gray:#6b7280;
+    --green:#10b981; --orange:#f59e0b; --red:#ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:var(--v900);color:var(--white);min-height:100vh}
+
+  /* ── Header ── */
+  .hdr{background:linear-gradient(135deg,var(--v800),var(--v700));
+    padding:.85rem 1.5rem;display:flex;align-items:center;gap:1rem;
+    border-bottom:1px solid var(--v600)}
+  .hdr a{color:var(--v300);text-decoration:none;font-size:.85rem;opacity:.8}
+  .hdr a:hover{opacity:1}
+  .hdr h1{font-size:1.35rem;font-weight:700;
+    background:linear-gradient(135deg,var(--v200),var(--white));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 auto}
+
+  /* ── Layout ── */
+  .main{display:grid;grid-template-columns:1fr 360px;gap:1.1rem;
+    padding:1.1rem;max-width:1150px;margin:0 auto}
+
+  /* ── Vidéo ── */
+  .vcont{background:#0d0020;border:2px solid var(--v600);border-radius:12px;
+    overflow:hidden;position:relative;aspect-ratio:4/3}
+  .vcont img{width:100%;height:100%;object-fit:contain;display:block}
+  .vbadge{position:absolute;bottom:10px;left:12px;display:flex;align-items:center;
+    gap:6px;background:rgba(0,0,0,.65);padding:4px 10px;border-radius:20px;font-size:.72rem}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* ── Panel ── */
+  .panel{display:flex;flex-direction:column;gap:.85rem;
+    overflow-y:auto;max-height:calc(100vh - 90px)}
+  .panel::-webkit-scrollbar{width:4px}
+  .panel::-webkit-scrollbar-track{background:transparent}
+  .panel::-webkit-scrollbar-thumb{background:var(--v600);border-radius:2px}
+
+  /* ── Card ── */
+  .card{background:var(--v800);border:1px solid var(--v600);border-radius:11px;padding:1rem}
+  .card-title{font-size:.76rem;font-weight:600;color:var(--v200);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem;
+    display:flex;align-items:center;gap:.5rem}
+  .card-title .dot2{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+  /* ── Paramètre ── */
+  .p-group{margin-bottom:.8rem}
+  .p-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+  .p-name{font-size:.81rem;color:var(--v200);font-weight:500}
+  .p-val{display:flex;align-items:center;gap:.35rem}
+  .p-val input[type="number"]{
+    width:60px;padding:3px 6px;background:rgba(0,0,0,.45);
+    border:1px solid var(--v600);border-radius:6px;
+    color:var(--white);font-size:.81rem;font-family:'Inter',sans-serif;
+    text-align:center;-moz-appearance:textfield}
+  .p-val input[type="number"]::-webkit-inner-spin-button,
+  .p-val input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
+  .p-val input[type="number"]:focus{outline:none;border-color:var(--v400)}
+  .unit{font-size:.7rem;color:var(--gray)}
+  .hint{font-size:.7rem;color:var(--gray);margin-top:.25rem;font-style:italic}
+
+  /* ── Slider ── */
+  input[type="range"]{
+    -webkit-appearance:none;width:100%;height:5px;border-radius:3px;outline:none;cursor:pointer;
+    background:linear-gradient(to right,var(--v400) 0%,var(--v400) var(--p,50%),
+      rgba(255,255,255,.12) var(--p,50%),rgba(255,255,255,.12) 100%)}
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:var(--v300);border:2px solid var(--v500);cursor:pointer;
+    box-shadow:0 0 6px rgba(124,58,237,.5)}
+  input[type="range"]:hover::-webkit-slider-thumb{background:var(--white)}
+
+  /* ── Boutons ── */
+  .btn{width:100%;padding:.78rem 1rem;border:none;border-radius:10px;
+    font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;
+    transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+  .btn-save{background:linear-gradient(135deg,var(--v500),var(--v600));color:#fff;
+    box-shadow:0 4px 14px rgba(124,58,237,.4)}
+  .btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(124,58,237,.5)}
+  .btn-reset{background:transparent;color:var(--v300);border:1px solid var(--v600)}
+  .btn-reset:hover{background:rgba(124,58,237,.1)}
+
+  /* ── Status ── */
+  .sbox{border-radius:9px;padding:.65rem .9rem;font-size:.78rem;
+    display:flex;align-items:center;gap:.45rem;min-height:38px}
+  .sbox.ok  {border:1px solid var(--green);color:#6ee7b7;background:rgba(16,185,129,.08)}
+  .sbox.err {border:1px solid var(--red);  color:#fca5a5;background:rgba(239,68,68,.08)}
+  .sbox.idle{border:1px solid var(--v600); color:var(--v300);background:var(--v800)}
+
+  @media(max-width:800px){
+    .main{grid-template-columns:1fr}
+    .vcont{aspect-ratio:auto;min-height:260px}
+    .panel{max-height:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <a href="/scanner">← Scanner</a>
+  <h1>⚙️ POKIA Calibration</h1>
+</div>
+
+<div class="main">
+
+  <!-- Vidéo live -->
+  <div class="vcont">
+    <img id="vfeed" src="/calibration/feed" alt="Preview calibration">
+    <div class="vbadge"><div class="dot"></div><span>Preview en temps réel</span></div>
+  </div>
+
+  <!-- Panneau -->
+  <div class="panel">
+
+    <!-- ═══ ZOOM-OUT ═══ -->
+    <div class="card">
+      <div class="card-title">
+        <span class="dot2" style="background:#ec4899"></span>
+        Zoom-out Caméra
+      </div>
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Facteur zoom-out</span>
+          <div class="p-val">
+            <input type="number" id="zoom_out" min="1.00" max="3.00" step="0.01" value="1.48"
+                   oninput="onNum('zoom_out',1.00,3.00)">
+            <span class="unit">×</span>
+          </div>
+        </div>
+        <input type="range" id="sl_zoom_out" min="1.00" max="3.00" step="0.01" value="1.48"
+               oninput="onSlider('zoom_out',this.value)">
+        <p class="hint">1.0 = pas de recul · Augmenter si la carte sort encore du cadre</p>
+      </div>
+    </div>
+
+    <!-- ═══ COINS ═══ -->
+    <div class="card">
+      <div class="card-title">
+        <span class="dot2" style="background:#10b981"></span>
+        Zones des Coins (C1-C4)
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Position depuis le bord</span>
+          <div class="p-val">
+            <input type="number" id="coin_offset" min="0" max="12" step="0.1" value="2.0"
+                   oninput="onNum('coin_offset',0,12)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_coin_offset" min="0" max="12" step="0.1" value="2.0"
+               oninput="onSlider('coin_offset',this.value)">
+        <p class="hint">Distance des carrés C1-C4 depuis le coin de la carte</p>
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Taille des zones coin</span>
+          <div class="p-val">
+            <input type="number" id="coin_size" min="1" max="15" step="0.5" value="4.0"
+                   oninput="onNum('coin_size',1,15)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_coin_size" min="1" max="15" step="0.5" value="4.0"
+               oninput="onSlider('coin_size',this.value)">
+        <p class="hint">Taille du carré vert d'analyse sur chaque coin</p>
+      </div>
+    </div>
+
+    <!-- ═══ BORDS ═══ -->
+    <div class="card">
+      <div class="card-title">
+        <span class="dot2" style="background:#f59e0b"></span>
+        Bandes d'Analyse des Bords
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Épaisseur bords Haut / Bas</span>
+          <div class="p-val">
+            <input type="number" id="bord_hb" min="0.5" max="15" step="0.1" value="2.7"
+                   oninput="onNum('bord_hb',0.5,15)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_bord_hb" min="0.5" max="15" step="0.1" value="2.7"
+               oninput="onSlider('bord_hb',this.value)">
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Épaisseur bords Gauche / Droite</span>
+          <div class="p-val">
+            <input type="number" id="bord_gd" min="0.5" max="15" step="0.1" value="4.0"
+                   oninput="onNum('bord_gd',0.5,15)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_bord_gd" min="0.5" max="15" step="0.1" value="4.0"
+               oninput="onSlider('bord_gd',this.value)">
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Marge intérieure (évite les coins)</span>
+          <div class="p-val">
+            <input type="number" id="bord_margin" min="0" max="8" step="0.1" value="1.0"
+                   oninput="onNum('bord_margin',0,8)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_bord_margin" min="0" max="8" step="0.1" value="1.0"
+               oninput="onSlider('bord_margin',this.value)">
+        <p class="hint">Retrait aux extrémités des bandes pour ne pas chevaucher les coins</p>
+      </div>
+    </div>
+
+    <!-- ═══ DÉTECTION ═══ -->
+    <div class="card">
+      <div class="card-title">
+        <span class="dot2" style="background:#a855f7"></span>
+        Paramètres de Détection
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Seuil Canny bas</span>
+          <div class="p-val">
+            <input type="number" id="canny_low" min="5" max="150" step="1" value="40"
+                   oninput="onNum('canny_low',5,150)">
+          </div>
+        </div>
+        <input type="range" id="sl_canny_low" min="5" max="150" step="1" value="40"
+               oninput="onSlider('canny_low',this.value)">
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Seuil Canny haut</span>
+          <div class="p-val">
+            <input type="number" id="canny_high" min="50" max="300" step="1" value="130"
+                   oninput="onNum('canny_high',50,300)">
+          </div>
+        </div>
+        <input type="range" id="sl_canny_high" min="50" max="300" step="1" value="130"
+               oninput="onSlider('canny_high',this.value)">
+        <p class="hint">Valeurs élevées = détection moins sensible mais plus précise</p>
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Surface minimale carte</span>
+          <div class="p-val">
+            <input type="number" id="min_area" min="1" max="30" step="0.5" value="6.0"
+                   oninput="onNum('min_area',1,30)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <input type="range" id="sl_min_area" min="1" max="30" step="0.5" value="6.0"
+               oninput="onSlider('min_area',this.value)">
+      </div>
+
+      <div class="p-group">
+        <div class="p-row">
+          <span class="p-name">Tolérance ratio largeur/hauteur</span>
+          <div class="p-val">
+            <input type="number" id="ratio_tol" min="0.05" max="0.6" step="0.01" value="0.35"
+                   oninput="onNum('ratio_tol',0.05,0.6)">
+          </div>
+        </div>
+        <input type="range" id="sl_ratio_tol" min="0.05" max="0.6" step="0.01" value="0.35"
+               oninput="onSlider('ratio_tol',this.value)">
+        <p class="hint">Augmenter si la carte est mal détectée (légèrement de travers)</p>
+      </div>
+    </div>
+
+    <!-- Boutons -->
+    <button class="btn btn-save" onclick="saveConfig()">💾 Sauvegarder la calibration</button>
+    <button class="btn btn-reset" onclick="resetConfig()">↩ Remettre les valeurs par défaut</button>
+
+    <!-- Status -->
+    <div class="sbox idle" id="sbox">Modifiez les paramètres — la preview se met à jour instantanément</div>
+
+  </div>
+</div>
+
+<script>
+// ─── Paramètres (doivent correspondre exactement aux clés Python) ───
+const PARAMS = {
+  zoom_out:    { min:1.00, max:3.00, step:0.01, def:1.48 },
+  coin_offset: { min:0,    max:12,   step:0.1,  def:2.0  },
+  coin_size:   { min:1,    max:15,   step:0.5,  def:4.0  },
+  bord_hb:     { min:0.5,  max:15,   step:0.1,  def:2.7  },
+  bord_gd:     { min:0.5,  max:15,   step:0.1,  def:4.0  },
+  bord_margin: { min:0,    max:8,    step:0.1,  def:1.0  },
+  canny_low:   { min:5,    max:150,  step:1,    def:40   },
+  canny_high:  { min:50,   max:300,  step:1,    def:130  },
+  min_area:    { min:1,    max:30,   step:0.5,  def:6.0  },
+  ratio_tol:   { min:0.05, max:0.6,  step:0.01, def:0.35 },
+};
+
+// ─── Mettre à jour la couleur du slider ───
+function refreshSlider(id) {
+  const s = document.getElementById('sl_' + id);
+  if (!s) return;
+  const pct = (s.value - s.min) / (s.max - s.min) * 100;
+  s.style.setProperty('--p', pct + '%');
+}
+
+// ─── Slider → nombre ───
+function onSlider(id, val) {
+  const n = document.getElementById(id);
+  if (n) n.value = parseFloat(val);
+  refreshSlider(id);
+  pushPreview();
+}
+
+// ─── Nombre → slider ───
+function onNum(id, min, max) {
+  const n = document.getElementById(id);
+  const s = document.getElementById('sl_' + id);
+  if (!n) return;
+  let v = parseFloat(n.value);
+  if (isNaN(v)) return;
+  v = Math.max(min, Math.min(max, v));
+  n.value = v;
+  if (s) { s.value = v; refreshSlider(id); }
+  pushPreview();
+}
+
+// ─── Lire toutes les valeurs ───
+function getValues() {
+  const out = {};
+  Object.keys(PARAMS).forEach(k => {
+    const el = document.getElementById(k);
+    out[k] = el ? parseFloat(el.value) : PARAMS[k].def;
+  });
+  return out;
+}
+
+// ─── Envoyer au serveur (preview temps réel) ───
+let _timer = null;
+function pushPreview() {
+  clearTimeout(_timer);
+  _timer = setTimeout(() => {
+    fetch('/calibration/preview', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(getValues())
+    }).catch(() => {});
+  }, 80);   // 80ms de délai pour ne pas saturer
+}
+
+// ─── Sauvegarder ───
+async function saveConfig() {
+  const sbox = document.getElementById('sbox');
+  sbox.className = 'sbox idle';
+  sbox.textContent = '⏳ Sauvegarde...';
+  try {
+    const r = await fetch('/calibration/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(getValues())
+    });
+    const d = await r.json();
+    if (d.success) {
+      sbox.className = 'sbox ok';
+      sbox.textContent = '✓ Calibration sauvegardée et appliquée au scanner';
+    } else {
+      sbox.className = 'sbox err';
+      sbox.textContent = 'Erreur : ' + (d.message || 'inconnue');
+    }
+  } catch(e) {
+    sbox.className = 'sbox err';
+    sbox.textContent = 'Erreur réseau';
+  }
+}
+
+// ─── Reset ───
+async function resetConfig() {
+  Object.entries(PARAMS).forEach(([k, p]) => {
+    const n = document.getElementById(k);
+    const s = document.getElementById('sl_' + k);
+    if (n) n.value = p.def;
+    if (s) { s.value = p.def; refreshSlider(k); }
+  });
+  pushPreview();
+  const sbox = document.getElementById('sbox');
+  sbox.className = 'sbox idle';
+  sbox.textContent = 'Valeurs par défaut remises (non sauvegardées)';
+}
+
+// ─── Charger config existante depuis le serveur ───
+async function loadConfig() {
+  try {
+    const r = await fetch('/calibration/config');
+    const d = await r.json();
+    if (d.success && d.config) {
+      Object.entries(d.config).forEach(([k, v]) => {
+        const n = document.getElementById(k);
+        const s = document.getElementById('sl_' + k);
+        if (n) n.value = v;
+        if (s) { s.value = v; refreshSlider(k); }
+      });
+      // Envoyer immédiatement la config chargée au serveur pour la preview
+      pushPreview();
+    }
+  } catch(e) { /* pas de config = valeurs par défaut */ }
+}
+
+// ─── Init ───
+Object.keys(PARAMS).forEach(k => refreshSlider(k));
+loadConfig();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+flask==2.0.1
+Werkzeug==2.0.1
+opencv-python==4.5.3
+numpy==1.21.2
+flask-paginate==0.8.1
+flask-sqlalchemy==2.5.1
+flask-login==0.5.0
+requests==2.26.0

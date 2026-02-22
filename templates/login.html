@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}Connexion - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container">
+        <div class="auth-form-container">
+            <div class="auth-header">
+                <h1>Connexion</h1>
+                <p>Accédez à votre compte POKIA et retrouvez notre marketplace exclusive.</p>
+            </div>
+            
+            <!-- Affichage des messages flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" required placeholder="Votre nom d'utilisateur">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" required placeholder="Votre mot de passe">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="remember">
+                        <span class="checkmark"></span>
+                        Se souvenir de moi
+                    </label>
+                </div>
+                
+                <button type="submit" class="auth-btn">Se connecter</button>
+                
+                <div class="forgot-password">
+                    <a href="#">Mot de passe oublié?</a>
+                </div>
+            </form>
+            
+            <div class="auth-footer">
+                <p>Vous n'avez pas de compte? <a href="{{ url_for('register') }}">Créer un compte</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

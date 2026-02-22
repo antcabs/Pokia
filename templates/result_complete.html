@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+
+{% block title %}Résultats d'analyse complète - Analyseur de Cartes Pokémon{% endblock %}
+
+{% block content %}
+<div class="results-container complete-analysis">
+    <div class="card pokemon-card">
+        <div class="card-header">
+            <h2>Résultats d'analyse complète (recto-verso)</h2>
+        </div>
+        <div class="card-body">
+            <!-- Note combinée -->
+            <div class="combined-grade-section">
+                <h3>Note combinée</h3>
+                <div class="grade-header">
+                    {% if details_combined.note_psa >= 9 %}
+                        <div class="grade-circle grade-excellent">
+                    {% elif details_combined.note_psa >= 7 %}
+                        <div class="grade-circle grade-good">
+                    {% elif details_combined.note_psa >= 5 %}
+                        <div class="grade-circle grade-average">
+                    {% else %}
+                        <div class="grade-circle grade-poor">
+                    {% endif %}
+                        <span class="grade-number">{{ details_combined.note_psa }}</span>
+                    </div>
+                    <div class="grade-info">
+                        <h3>Note POKIA finale: {{ details_combined.note_psa }} ({{ details_combined.description_psa }})</h3>
+                        <p>Note globale combinée: <strong>{{ details_combined.note_globale }}/80</strong></p>
+                        <p class="note-combinee-explication">La note finale est basée sur le côté de la carte avec le score le plus bas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs pour choisir entre recto et verso -->
+            <div class="card-tabs">
+                <div class="tab-header">
+                    <button class="tab-btn active" onclick="openTab(event, 'front')">Recto (avant)</button>
+                    <button class="tab-btn" onclick="openTab(event, 'back')">Verso (arrière)</button>
+                </div>
+                
+                <!-- Contenu tab face avant -->
+                <div id="front" class="tab-content" style="display: block;">
+                    <div class="grade-section">
+                        <div class="grade-header">
+                            {% if details_front.note_psa >= 9 %}
+                                <div class="grade-circle grade-excellent">
+                            {% elif details_front.note_psa >= 7 %}
+                                <div class="grade-circle grade-good">
+                            {% elif details_front.note_psa >= 5 %}
+                                <div class="grade-circle grade-average">
+                            {% else %}
+                                <div class="grade-circle grade-poor">
+                            {% endif %}
+                                <span class="grade-number">{{ details_front.note_psa }}</span>
+                            </div>
+                            <div class="grade-info">
+                                <h3>Note POKIA: {{ details_front.note_psa }} ({{ details_front.description_psa }})</h3>
+                                <p>Note globale: <strong>{{ details_front.note_globale }}/80</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div class="grade-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Coins</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill coins-fill-front"></div>
+                                </div>
+                                <div class="detail-value">{{ details_front.coins }}/30</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bords</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill bords-fill-front"></div>
+                                </div>
+                                <div class="detail-value">{{ details_front.bords }}/30</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Centrage</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill centrage-fill-front"></div>
+                                </div>
+                                <div class="detail-value">{{ details_front.centrage }}/20</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-results">
+                        <div class="image-result">
+                            <h4>Image originale</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_front.original_image }}" alt="Original">
+                            </div>
+                        </div>
+                        <div class="image-result">
+                            <h4>Carte détectée</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_front.carte_redressee }}" alt="Carte détectée">
+                            </div>
+                        </div>
+                        <div class="image-result full-width">
+                            <h4>Rapport d'analyse</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_front.rapport }}" alt="Rapport d'analyse">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contenu tab face arrière -->
+                <div id="back" class="tab-content" style="display: none;">
+                    <div class="grade-section">
+                        <div class="grade-header">
+                            {% if details_back.note_psa >= 9 %}
+                                <div class="grade-circle grade-excellent">
+                            {% elif details_back.note_psa >= 7 %}
+                                <div class="grade-circle grade-good">
+                            {% elif details_back.note_psa >= 5 %}
+                                <div class="grade-circle grade-average">
+                            {% else %}
+                                <div class="grade-circle grade-poor">
+                            {% endif %}
+                                <span class="grade-number">{{ details_back.note_psa }}</span>
+                            </div>
+                            <div class="grade-info">
+                                <h3>Note POKIA: {{ details_back.note_psa }} ({{ details_back.description_psa }})</h3>
+                                <p>Note globale: <strong>{{ details_back.note_globale }}/80</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div class="grade-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Coins</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill coins-fill-back"></div>
+                                </div>
+                                <div class="detail-value">{{ details_back.coins }}/30</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Bords</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill bords-fill-back"></div>
+                                </div>
+                                <div class="detail-value">{{ details_back.bords }}/30</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Centrage</div>
+                                <div class="detail-bar">
+                                    <div class="detail-fill centrage-fill-back"></div>
+                                </div>
+                                <div class="detail-value">{{ details_back.centrage }}/20</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Black Label Metrics pour le verso -->
+                    {% if details_back.blm_grade is defined %}
+                    <div class="blm-section">
+                        <h3>Black Label Metrics - Centrage</h3>
+                        <div class="blm-details">
+                            <div class="blm-horizontal">
+                                <div class="blm-label">Horizontal:</div>
+                                <div class="blm-value">{{ details_back.blm_ratio_horizontal }}</div>
+                                <div class="blm-grade">Grade: {{ details_back.blm_grade_horizontal }}</div>
+                                <div class="blm-status {% if details_back.blm_acceptable_h %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                                    {{ "ACCEPTABLE" if details_back.blm_acceptable_h else "HORS TOLÉRANCE" }}
+                                </div>
+                            </div>
+                            <div class="blm-vertical">
+                                <div class="blm-label">Vertical:</div>
+                                <div class="blm-value">{{ details_back.blm_ratio_vertical }}</div>
+                                <div class="blm-grade">Grade: {{ details_back.blm_grade_vertical }}</div>
+                                <div class="blm-status {% if details_back.blm_acceptable_v %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                                    {{ "ACCEPTABLE" if details_back.blm_acceptable_v else "HORS TOLÉRANCE" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="blm-combined">
+                            <div class="blm-combined-grade">Grade combiné: <strong>{{ details_back.blm_grade }}</strong></div>
+                            <div class="blm-overall-status {% if details_back.blm_acceptable %}status-acceptable{% else %}status-unacceptable{% endif %}">
+                                {% if details_back.blm_acceptable %}
+                                    <strong>CONFORME AUX STANDARDS BLACK LABEL</strong>
+                                    <span>Le centrage de cette carte respecte les normes Black Label (60/40 ou mieux).</span>
+                                {% else %}
+                                    <strong>NON CONFORME AUX STANDARDS BLACK LABEL</strong>
+                                    <span>Le centrage de cette carte ne respecte pas les normes Black Label qui requièrent un minimum de 60/40.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if details_back.blm_marge_gauche is defined %}
+                        <div class="blm-margins">
+                            <div class="blm-margin-title">Mesures précises (en pixels):</div>
+                            <div class="blm-margin-details">
+                                <span>Gauche: {{ details_back.blm_marge_gauche }}</span>
+                                <span>Droite: {{ details_back.blm_marge_droite }}</span>
+                                <span>Haut: {{ details_back.blm_marge_haut }}</span>
+                                <span>Bas: {{ details_back.blm_marge_bas }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="image-results">
+                        <div class="image-result">
+                            <h4>Image originale</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_back.original_image }}" alt="Original">
+                            </div>
+                        </div>
+                        <div class="image-result">
+                            <h4>Carte détectée</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_back.carte_redressee }}" alt="Carte détectée">
+                            </div>
+                        </div>
+                        <div class="image-result full-width">
+                            <h4>Rapport d'analyse</h4>
+                            <div class="image-container">
+                                <img src="data:image/jpeg;base64,{{ details_back.rapport }}" alt="Rapport d'analyse">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <a href="{{ url_for('results', filename=details_front.result_filename) }}" download class="download-button">Télécharger le rapport recto</a>
+                <a href="{{ url_for('results', filename=details_back.result_filename) }}" download class="download-button">Télécharger le rapport verso</a>
+                <a href="{{ url_for('index') }}" class="back-button">Analyser une autre carte</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fonction pour ouvrir un onglet
+    function openTab(evt, tabName) {
+        // Cacher tous les contenus des onglets
+        var tabContents = document.getElementsByClassName("tab-content");
+        for (var i = 0; i < tabContents.length; i++) {
+            tabContents[i].style.display = "none";
+        }
+        
+        // Supprimer la classe 'active' de tous les boutons d'onglet
+        var tabButtons = document.getElementsByClassName("tab-btn");
+        for (var i = 0; i < tabButtons.length; i++) {
+            tabButtons[i].className = tabButtons[i].className.replace(" active", "");
+        }
+        
+        // Afficher le contenu de l'onglet actuel et ajouter la classe 'active' au bouton
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+    
+    // Appliquer les largeurs des barres de progression dynamiquement
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pour le recto
+        const coinsFillFront = document.querySelector('.coins-fill-front');
+        const bordsFillFront = document.querySelector('.bords-fill-front');
+        const centrageFillFront = document.querySelector('.centrage-fill-front');
+        
+        if (coinsFillFront) coinsFillFront.style.width = '{{ (details_front.coins / 30) * 100 }}%';
+        if (bordsFillFront) bordsFillFront.style.width = '{{ (details_front.bords / 30) * 100 }}%';
+        if (centrageFillFront) centrageFillFront.style.width = '{{ (details_front.centrage / 20) * 100 }}%';
+        
+        // Pour le verso
+        const coinsFillBack = document.querySelector('.coins-fill-back');
+        const bordsFillBack = document.querySelector('.bords-fill-back');
+        const centrageFillBack = document.querySelector('.centrage-fill-back');
+        
+        if (coinsFillBack) coinsFillBack.style.width = '{{ (details_back.coins / 30) * 100 }}%';
+        if (bordsFillBack) bordsFillBack.style.width = '{{ (details_back.bords / 30) * 100 }}%';
+        if (centrageFillBack) centrageFillBack.style.width = '{{ (details_back.centrage / 20) * 100 }}%';
+    });
+</script>
+{% endblock %}

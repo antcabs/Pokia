@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+
+{% block title %}Confirmation de commande - POKIA{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/order-confirmation.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<section class="confirmation-section">
+    <div class="container">
+        <div class="confirmation-header">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h1>Commande confirmée !</h1>
+            <p>Merci pour votre achat. Votre commande a été reçue et est en cours de traitement.</p>
+        </div>
+        
+        <div class="confirmation-details">
+            <div class="order-info">
+                <div class="info-group">
+                    <h3>Informations de commande</h3>
+                    <div class="info-item">
+                        <span class="info-label">Numéro de commande:</span>
+                        <span class="info-value">#{{ order.id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date:</span>
+                        <span class="info-value">{{ order.order_date.strftime('%d/%m/%Y à %H:%M') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total:</span>
+                        <span class="info-value">{{ "%.2f"|format(order.total_amount) }} €</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Statut:</span>
+                        <span class="info-value status-{{ order.status }}">{{ order.status }}</span>
+                    </div>
+                </div>
+                
+                <div class="info-group shipping-address">
+                    <h3>Adresse de livraison</h3>
+                    <p>{{ order.shipping_address|nl2br }}</p>
+                </div>
+            </div>
+            
+            <div class="order-summary">
+                <h3>Récapitulatif des articles</h3>
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <div class="item-image">
+                            <img src="{{ url_for('static', filename=item.card.image_path) }}" alt="{{ item.card.name }}">
+                        </div>
+                        <div class="item-details">
+                            <h4>{{ item.card.name }}</h4>
+                            <div class="item-meta">
+                                <span class="item-type">{{ item.card.type }}</span>
+                                {% if item.card.psa_grade %}
+                                <span class="item-grade">{{ item.card.psa_grade }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="item-quantity">
+                            x{{ item.quantity }}
+                        </div>
+                        <div class="item-total">
+                            {{ "%.2f"|format(item.price_at_purchase * item.quantity) }} €
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="order-totals">
+                    <div class="total-row">
+                        <span>Sous-total</span>
+                        <span>{{ "%.2f"|format(order.total_amount) }} €</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Frais de livraison</span>
+                        <span>Gratuit</span>
+                    </div>
+                    <div class="total-row final-total">
+                        <span>Total</span>
+                        <span>{{ "%.2f"|format(order.total_amount) }} €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="confirmation-actions">
+            <a href="{{ url_for('order_details', order_id=order.id) }}" class="btn-view-order">Voir les détails de la commande</a>
+            <a href="{{ url_for('marketplace') }}" class="btn-continue-shopping">Continuer les achats</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

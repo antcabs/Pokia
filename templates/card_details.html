@@ -1,0 +1,436 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ card.name }} - Détails de la carte{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/market.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/card-details.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .add-to-cart-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s;
+    }
+    
+    .add-to-cart-btn:hover {
+        background-color: #0069d9;
+    }
+    
+    .add-to-cart-btn i {
+        margin-right: 8px;
+    }
+    
+    /* Style pour l'option de gradation */
+    .grading-option {
+        margin-top: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .grading-option-header {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .grading-checkbox {
+        margin-right: 10px;
+    }
+
+    .grading-label {
+        font-weight: 600;
+        color: #333;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .grading-label i {
+        color: #007bff;
+        margin-right: 8px;
+        font-size: 18px;
+    }
+
+    .grading-details {
+        padding: 15px;
+        background-color: #fff;
+        border-top: 1px solid #e0e0e0;
+        display: none;
+    }
+
+    #grading-checkbox:checked ~ .grading-details {
+        display: block;
+    }
+
+    .grading-details p {
+        margin-bottom: 10px;
+    }
+
+    .grading-details ul {
+        margin-bottom: 15px;
+        padding-left: 20px;
+    }
+
+    .grading-details li {
+        margin-bottom: 5px;
+    }
+
+    .grading-note {
+        font-size: 14px;
+        color: #666;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .grading-note i {
+        color: #007bff;
+        margin-right: 5px;
+    }
+    
+    /* Style pour le bouton favoris */
+    .favorite-btn {
+        background-color: #ff6b6b;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s;
+        margin-top: 15px;
+    }
+    
+    .favorite-btn:hover {
+        background-color: #ff5252;
+    }
+    
+    .favorite-btn i {
+        margin-right: 8px;
+    }
+    
+    .favorite-btn.in-favorites {
+        background-color: #6c757d;
+    }
+    
+    .favorite-btn.in-favorites:hover {
+        background-color: #5a6268;
+    }
+    
+    .buttons-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    /* Style pour la modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .cancel-btn {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .confirm-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    /* Styles pour la section d'authentification */
+    .authentication-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+    
+    .authentication-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .auth-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: #007bff;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .auth-button i {
+        margin-right: 0.5rem;
+    }
+    
+    .auth-button:hover {
+        background-color: #0069d9;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="card-details-section">
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('marketplace') }}">Marketplace</a> &gt; <span>{{ card.name }}</span>
+        </nav>
+        
+        <div class="card-details-container">
+            <div class="card-image-container">
+                <div class="card-badges">
+                    {% if card.psa_grade %}
+                    <span class="badge grade-badge">{{ card.psa_grade }}</span>
+                    {% endif %}
+                    {% if card.rarity in ['Ultra Rare', 'Secrète', 'Hyper Rare', 'Rainbow', 'Shiny'] %}
+                    <span class="badge rarity-badge">{{ card.rarity }}</span>
+                    {% endif %}
+                </div>
+                <img src="{{ url_for('static', filename=card.image_path) }}" alt="{{ card.name }}" class="card-image">
+                <div class="card-actions">
+                    <a href="{{ url_for('edit_card', card_id=card.id) }}" class="action-btn edit-btn">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    <button class="action-btn delete-btn" onclick="showDeleteConfirmation()">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-info-container">
+                <h1 class="card-title">{{ card.name }}</h1>
+                <div class="card-meta">
+                    <span class="card-type"><i class="fas fa-tag"></i> {{ card.type }}</span>
+                    <span class="card-rarity"><i class="fas fa-gem"></i> {{ card.rarity }}</span>
+                    <span class="card-date"><i class="fas fa-calendar-alt"></i> Ajouté le {{ card.date_added.strftime('%d/%m/%Y') }}</span>
+                </div>
+                
+                <div class="card-price-container">
+                    <div class="price-info">
+                        <span class="current-price">{{ "%.2f"|format(card.price) }} €</span>
+                        {% if card.old_price %}
+                        <span class="old-price">{{ "%.2f"|format(card.old_price) }} €</span>
+                        <span class="discount">-{{ ((1 - card.price / card.old_price) * 100)|round|int }}%</span>
+                        {% endif %}
+                    </div>
+                    <div class="buttons-container">
+                        <!-- Formulaire pour ajouter au panier -->
+                        <form action="{{ url_for('add_to_cart', card_id=card.id) }}" method="POST">
+                            <input type="hidden" name="grading_service" id="grading-service-input" value="no">
+                            <button type="submit" class="add-to-cart-btn">
+                                <i class="fas fa-shopping-cart"></i> Ajouter au panier
+                            </button>
+                        </form>
+                        
+                        <!-- Bouton pour ajouter/retirer des favoris -->
+                        <form action="{{ url_for('toggle_favorite', card_id=card.id) }}" method="POST">
+                            <button type="submit" class="favorite-btn {% if card.id in user_favorites %}in-favorites{% endif %}">
+                                <i class="{% if card.id in user_favorites %}fas{% else %}far{% endif %} fa-heart"></i>
+                                {% if card.id in user_favorites %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Option de gradation -->
+                <div class="grading-option">
+                    <div class="grading-option-header">
+                        <input type="checkbox" id="grading-checkbox" class="grading-checkbox">
+                        <label for="grading-checkbox" class="grading-label">
+                            <i class="fas fa-certificate"></i> Option gradation (+15,00 €)
+                        </label>
+                    </div>
+                    <div class="grading-details">
+                        <p>Envoyez cette carte directement en gradation POKIA. Notre service comprend:</p>
+                        <ul>
+                            <li>Préparation professionnelle de la carte</li>
+                            <li>Protection et emballage premium</li>
+                            <li>Envoi sécurisé au service POKIA</li>
+                            <li>Gestion administrative du dossier</li>
+                        </ul>
+                        <div class="grading-note">
+                            <i class="fas fa-info-circle"></i> Les frais de gradation POKIA sont en supplément et facturés séparément.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-description">
+                    <h3>Description</h3>
+                    {% if card.description %}
+                    <p>{{ card.description }}</p>
+                    {% else %}
+                    <p class="no-description">Aucune description disponible pour cette carte.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="card-features">
+                    <div class="feature">
+                        <i class="fas fa-microscope"></i>
+                        <div class="feature-content">
+                            <h4>Analyse de qualité</h4>
+                            <p>Notre technologie POKIA garantit l'authenticité de cette carte</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-truck"></i>
+                        <div class="feature-content">
+                            <h4>Livraison sécurisée</h4>
+                            <p>Emballage spécial pour protéger cette précieuse carte</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-sync"></i>
+                        <div class="feature-content">
+                            <h4>Retour facile</h4>
+                            <p>14 jours pour changer d'avis, sans questions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section d'authentification - DÉPLACÉE À L'INTÉRIEUR DU BLOC CONTENT -->
+        {% if current_user.is_admin %}
+        <div class="authentication-section">
+            <h3>Authentification</h3>
+            <p>Générez un QR code d'authenticité pour cette carte Pokémon.</p>
+            
+            <div class="authentication-actions">
+                <a href="{{ url_for('generate_auth_code', card_id=card.id) }}" class="auth-button" download>
+                    <i class="fas fa-qrcode"></i> Télécharger QR Code
+                </a>
+                <a href="{{ url_for('card_auth_label', card_id=card.id) }}" class="auth-button">
+                    <i class="fas fa-tag"></i> Créer Étiquette
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Modal de confirmation de suppression - Version améliorée -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Confirmer la suppression</h3>
+        <p>Êtes-vous sûr de vouloir supprimer cette carte ?</p>
+        <p>Cette action est irréversible.</p>
+        <div class="modal-actions">
+            <button type="button" onclick="closeDeleteModal()" class="cancel-btn">Annuler</button>
+            <form id="deleteForm" action="{{ url_for('delete_card', card_id=card.id) }}" method="POST">
+                <!-- Si votre application Flask utilise CSRF protection -->
+                {% if csrf_token %}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% endif %}
+                <button type="submit" class="confirm-btn">Confirmer la suppression</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fonctions pour gérer la modal de suppression
+    function showDeleteConfirmation() {
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+    
+    // Fermer la modal si l'utilisateur clique en dehors
+    window.onclick = function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target == modal) {
+            closeDeleteModal();
+        }
+    }
+    
+    // Gestion de l'option de gradation
+    document.addEventListener('DOMContentLoaded', function() {
+        const gradingCheckbox = document.getElementById('grading-checkbox');
+        const gradingServiceInput = document.getElementById('grading-service-input');
+        
+        if (gradingCheckbox && gradingServiceInput) {
+            gradingCheckbox.addEventListener('change', function() {
+                gradingServiceInput.value = this.checked ? 'yes' : 'no';
+            });
+        }
+        
+        // Ajouter un gestionnaire d'événements pour le formulaire de suppression
+        const deleteForm = document.getElementById('deleteForm');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(event) {
+                console.log('Formulaire de suppression soumis pour la carte ID: {{ card.id }}');
+                // Ajouter un indicateur visuel que le formulaire est soumis
+                const submitButton = this.querySelector('.confirm-btn');
+                if (submitButton) {
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Suppression...';
+                    submitButton.disabled = true;
+                }
+            });
+        }
+    });
+    
+    // Débogage supplémentaire
+    console.log('URL de suppression: {{ url_for("delete_card", card_id=card.id) }}');
+</script>
+{% endblock %}
